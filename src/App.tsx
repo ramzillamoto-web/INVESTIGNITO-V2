@@ -14,7 +14,7 @@ import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 // ==========================================
 // CONFIGURATION & UTILITIES
 // ==========================================
-const GATING_ENABLED = true; // Set to false when testing locally
+const GATING_ENABLED = false; // Set to false when testing locally
 const SHOPIFY_GUARD_URL = 'https://corexbooks.com/pages/app-gate-investignito';
 const SHOPIFY_LOGIN_URL = 'https://corexbooks.com/account/login?return_to=https://corexbooks.com/pages/app-gate-investignito';
 const SHOPIFY_PRODUCT_URL = 'https://corexbooks.com/products/investignito-subscription';
