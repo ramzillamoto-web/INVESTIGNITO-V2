@@ -15,8 +15,8 @@ import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 // SHOPIFY GATING & PRODUCT CONFIGURATION
 // ==========================================
 const GATING_ENABLED = true; // Set to false when testing locally
-const SHOPIFY_GUARD_URL = 'https://corexbooks.com/account/login?return_to=https://corexbooks.com/pages/app-gate-investignito';
-const SHOPIFY_PRODUCT_URL = 'https://corexbooks.com/products/investignito-subscription'; // UPDATE THIS WITH YOUR ACTUAL PRODUCT LINK
+const SHOPIFY_LOGIN_URL = 'https://corexbooks.com/account/login?return_to=https://corexbooks.com/pages/app-gate-investignito';
+const SHOPIFY_PRODUCT_URL = 'https://corexbooks.com/products/investignito-subscription'; // UPDATE WITH YOUR PRODUCT LINK
 const STORAGE_KEY = 'investignito_access_granted';
 const EXPIRY_DAYS = 14;
 
@@ -59,18 +59,13 @@ export default function App() {
     }
 
     if (access === 'denied') {
-      // Clean up the URL parameter so it doesn't trigger redirects
       window.history.replaceState({}, document.title, window.location.pathname);
       setIsAuthorized(false);
-      return; // STOP execution so it doesn't bounce to login automatically
+      return;
     }
 
-    // 3. No token present and no explicit access state: Bounce to Guard Page
-    if (window.top) {
-      window.top.location.href = SHOPIFY_GUARD_URL;
-    } else {
-      window.location.href = SHOPIFY_GUARD_URL;
-    }
+    // 3. No token present: Keep user on Paywall Screen (do NOT auto-redirect)
+    setIsAuthorized(false);
   }, []);
 
   // Default to landing page
@@ -161,7 +156,7 @@ export default function App() {
 
             {/* Secondary Action: Log In */}
             <a
-              href={SHOPIFY_GUARD_URL}
+              href={SHOPIFY_LOGIN_URL}
               target="_top"
               className="inline-block w-full bg-[#16161c] hover:bg-[#202028] text-[#c0c0d0] border border-[#282832] font-semibold py-3 px-6 rounded-lg text-xs tracking-wider uppercase transition-colors"
             >
