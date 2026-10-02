@@ -12,10 +12,11 @@ import { DarkMistBackground } from './components/DarkMistBackground';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 
 // ==========================================
-// SHOPIFY GATING CONFIGURATION
+// SHOPIFY GATING & PRODUCT CONFIGURATION
 // ==========================================
 const GATING_ENABLED = true; // Set to false when testing locally
 const SHOPIFY_GUARD_URL = 'https://corexbooks.com/pages/app-gate-investignito';
+const SHOPIFY_PRODUCT_URL = 'https://corexbooks.com/products/investignito-subscription'; // UPDATE THIS WITH YOUR ACTUAL PRODUCT LINK
 const STORAGE_KEY = 'investignito_access_granted';
 const EXPIRY_DAYS = 14;
 
@@ -145,13 +146,26 @@ export default function App() {
           <p className="text-sm text-[#8e8e9d] mb-6 leading-relaxed">
             An active <span className="text-white font-semibold">Investignito Subscriber</span> membership is required to access these case files.
           </p>
-          <a
-            href={SHOPIFY_GUARD_URL}
-            target="_top"
-            className="inline-block w-full bg-[#e50914] hover:bg-[#c10711] text-white font-bold py-3 px-6 rounded-lg text-sm tracking-wider uppercase transition-colors"
-          >
-            UNLOCK DOSSIER
-          </a>
+          
+          <div className="flex flex-col gap-3">
+            {/* Primary Action: Subscribe / Buy Product */}
+            <a
+              href={SHOPIFY_PRODUCT_URL}
+              target="_top"
+              className="inline-block w-full bg-[#e50914] hover:bg-[#c10711] text-white font-bold py-3 px-6 rounded-lg text-sm tracking-wider uppercase transition-colors shadow-lg"
+            >
+              SUBSCRIBE TO PLAY
+            </a>
+
+            {/* Secondary Action: Log In */}
+            <a
+              href={SHOPIFY_GUARD_URL}
+              target="_top"
+              className="inline-block w-full bg-[#16161c] hover:bg-[#202028] text-[#c0c0d0] border border-[#282832] font-semibold py-3 px-6 rounded-lg text-xs tracking-wider uppercase transition-colors"
+            >
+              LOG IN TO PLAY
+            </a>
+          </div>
         </div>
       </div>
     );
