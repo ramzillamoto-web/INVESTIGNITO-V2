@@ -59,11 +59,13 @@ export default function App() {
     }
 
     if (access === 'denied') {
+      // Clean up the URL parameter so it doesn't trigger redirects
+      window.history.replaceState({}, document.title, window.location.pathname);
       setIsAuthorized(false);
-      return;
+      return; // STOP execution so it doesn't bounce to login automatically
     }
 
-    // 3. No token present: Break out of iframe and redirect top parent window
+    // 3. No token present and no explicit access state: Bounce to Guard Page
     if (window.top) {
       window.top.location.href = SHOPIFY_GUARD_URL;
     } else {
@@ -78,7 +80,7 @@ export default function App() {
     return loadAllProgress();
   });
 
-  // Always show "How to Play" onboarding modal on load / refresh (no persistent "seen it" flag)
+  // Always show "How to Play" onboarding modal on load / refresh
   const [showHelpModal, setShowHelpModal] = useState<boolean>(true);
   const [showCongratulationsModal, setShowCongratulationsModal] = useState<boolean>(false);
   const [showCooldownModal, setShowCooldownModal] = useState<boolean>(false);
