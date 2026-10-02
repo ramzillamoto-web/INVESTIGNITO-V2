@@ -12,17 +12,17 @@ import { DarkMistBackground } from './components/DarkMistBackground';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 
 // ==========================================
-// SHOPIFY GATING & PRODUCT CONFIGURATION
+// CONFIGURATION & UTILITIES
 // ==========================================
 const GATING_ENABLED = true; // Set to false when testing locally
 const SHOPIFY_GUARD_URL = 'https://corexbooks.com/pages/app-gate-investignito';
 const SHOPIFY_LOGIN_URL = 'https://corexbooks.com/account/login?return_to=https://corexbooks.com/pages/app-gate-investignito';
-const SHOPIFY_PRODUCT_URL = 'https://corexbooks.com/products/investignito-subscription'; // UPDATE WITH YOUR PRODUCT LINK
+const SHOPIFY_PRODUCT_URL = 'https://corexbooks.com/products/investignito-subscription';
 const STORAGE_KEY = 'investignito_access_granted';
 const EXPIRY_DAYS = 14;
 
-// Helper function to safely read storage across cross-origin iframe boundaries
-function getStoredToken(): boolean {
+// Safe storage reader
+function checkIsTokenValid(): boolean {
   try {
     const cached = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
     if (cached) {
@@ -33,67 +33,74 @@ function getStoredToken(): boolean {
       }
     }
   } catch (e) {
-    // Storage access restricted inside iframe
+    // Storage access restricted in cross-origin iframe
   }
   return false;
 }
 
-// Helper function to safely write storage
-function setStoredToken() {
+// Safe storage writer
+function saveAccessToken() {
   const payload = JSON.stringify({ timestamp: Date.now() });
-  try {
-    localStorage.setItem(STORAGE_KEY, payload);
-  } catch (e) {}
-  try {
-    sessionStorage.setItem(STORAGE_KEY, payload);
-  } catch (e) {}
+  try { localStorage.setItem(STORAGE_KEY, payload); } catch (e) {}
+  try { sessionStorage.setItem(STORAGE_KEY, payload); } catch (e) {}
 }
 
 export default function App() {
-  // Read URL parameter immediately on component evaluation
-  const urlParams = new URLSearchParams(window.location.search);
-  const accessParam = urlParams.get('access');
-
-  // Initialize authorization state
+  // ==========================================
+  // GATING AUTHENTICATION LOGIC
+  // ==========================================
   const [isAuthorized, setIsAuthorized] = useState<boolean>(() => {
     if (!GATING_ENABLED) return true;
-    if (accessParam === 'granted') return true;
-    return getStoredToken();
+    
+    // 1. Check URL parameters on load
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('access') === 'granted') {
+      saveAccessToken();
+      return true;
+    }
+    if (params.get('access') === 'denied') {
+      return false;
+    }
+
+    // 2. Check stored token
+    return checkIsTokenValid();
   });
 
   useEffect(() => {
     if (!GATING_ENABLED) return;
 
-    // Handle incoming redirect from Guard Page
-    if (accessParam === 'granted') {
-      setStoredToken();
-      setIsAuthorized(true);
-      // Clean query parameter from address bar
+    const params = new URLSearchParams(window.location.search);
+    const access = params.get('access');
+
+    // Clean up query parameter from browser address bar
+    if (access === 'granted' || access === 'denied') {
       window.history.replaceState({}, document.title, window.location.pathname);
-      return;
+      if (access === 'granted') {
+        saveAccessToken();
+        setIsAuthorized(true);
+        return;
+      }
+      if (access === 'denied') {
+        setIsAuthorized(false);
+        return;
+      }
     }
 
-    if (accessParam === 'denied') {
-      setIsAuthorized(false);
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return;
-    }
-
-    // Check if user already holds a valid token
-    if (getStoredToken()) {
+    // Check token again
+    if (checkIsTokenValid()) {
       setIsAuthorized(true);
       return;
     }
 
-    // If unauthorized and no parameter is present, redirect top window to Guard Page ONCE
-    if (!isAuthorized) {
+    // Redirect to Guard Page if not authorized and not explicitly denied
+    if (!isAuthorized && access !== 'denied') {
       if (window.top) {
         window.top.location.href = SHOPIFY_GUARD_URL;
       } else {
         window.location.href = SHOPIFY_GUARD_URL;
       }
     }
-  }, []);
+  }, [isAuthorized]);
 
   // Default to landing page
   const [currentView, setCurrentView] = useState<ViewMode>('how_to_play');
