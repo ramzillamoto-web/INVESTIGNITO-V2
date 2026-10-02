@@ -62,8 +62,12 @@ export default function App() {
       return;
     }
 
-    // 3. No token present: Redirect user to Shopify Guard Page
-    window.location.href = SHOPIFY_GUARD_URL;
+    // 3. No token present: Break out of iframe and redirect top parent window
+    if (window.top) {
+      window.top.location.href = SHOPIFY_GUARD_URL;
+    } else {
+      window.location.href = SHOPIFY_GUARD_URL;
+    }
   }, []);
 
   // Default to landing page
@@ -143,6 +147,7 @@ export default function App() {
           </p>
           <a
             href={SHOPIFY_GUARD_URL}
+            target="_top"
             className="inline-block w-full bg-[#e50914] hover:bg-[#c10711] text-white font-bold py-3 px-6 rounded-lg text-sm tracking-wider uppercase transition-colors"
           >
             UNLOCK DOSSIER
