@@ -25,15 +25,55 @@ export default function App() {
   // ==========================================
   // GATING AUTHENTICATION LOGIC
   // ==========================================
-  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(() => {
+    if (!GATING_ENABLED) return true;
 
-  useEffect(() => {
-    if (!GATING_ENABLED) {
-      setIsAuthorized(true);
-      return;
+    // A. Check URL parameter FIRST on initial render
+    const urlParams = new URLSearchParams(window.location.search);
+    const access = urlParams.get('access');
+
+    if (access === 'granted') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ timestamp: Date.now() }));
+      return true;
     }
 
-    // 1. Check local cache for 14-day token
+    // B. Check local browser cache for 14-day token
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached) {
+      try {
+        const { timestamp } = JSON.parse(cached);
+        const fourteenDays = EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+        if (Date.now() - timestamp < fourteenDays) {
+          return true;
+        }
+      } catch (e) {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+
+    return false;
+  });
+
+  useEffect(() => {
+    if (!GATING_ENABLED) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const access = urlParams.get('access');
+
+    // Clean URL parameter once handled to keep address bar clean
+    if (access === 'granted' || access === 'denied') {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      if (access === 'granted') {
+        setIsAuthorized(true);
+        return;
+      }
+      if (access === 'denied') {
+        setIsAuthorized(false);
+        return;
+      }
+    }
+
+    // Check if we have a valid token in localStorage
     const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) {
       try {
@@ -48,31 +88,15 @@ export default function App() {
       }
     }
 
-    // 2. Read query parameter passed back from Shopify Guard Page
-    const urlParams = new URLSearchParams(window.location.search);
-    const access = urlParams.get('access');
-
-    if (access === 'granted') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ timestamp: Date.now() }));
-      window.history.replaceState({}, document.title, window.location.pathname);
-      setIsAuthorized(true);
-      return;
+    // ONLY bounce to Guard Page if user is NOT authorized and access wasn't explicitly denied
+    if (!isAuthorized && access !== 'denied') {
+      if (window.top) {
+        window.top.location.href = SHOPIFY_GUARD_URL;
+      } else {
+        window.location.href = SHOPIFY_GUARD_URL;
+      }
     }
-
-    if (access === 'denied') {
-      // Access was explicitly checked by Guard Page and denied -> Show Paywall UI (DO NOT REDIRECT)
-      window.history.replaceState({}, document.title, window.location.pathname);
-      setIsAuthorized(false);
-      return;
-    }
-
-    // 3. No token present and no URL parameter: Auto-bounce to Guard Page to check Shopify session/tags
-    if (window.top) {
-      window.top.location.href = SHOPIFY_GUARD_URL;
-    } else {
-      window.location.href = SHOPIFY_GUARD_URL;
-    }
-  }, []);
+  }, [isAuthorized]);
 
   // Default to landing page
   const [currentView, setCurrentView] = useState<ViewMode>('how_to_play');
