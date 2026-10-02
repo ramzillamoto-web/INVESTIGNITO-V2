@@ -21,82 +21,79 @@ const SHOPIFY_PRODUCT_URL = 'https://corexbooks.com/products/investignito-subscr
 const STORAGE_KEY = 'investignito_access_granted';
 const EXPIRY_DAYS = 14;
 
-export default function App() {
-  // ==========================================
-  // GATING AUTHENTICATION LOGIC
-  // ==========================================
-  const [isAuthorized, setIsAuthorized] = useState<boolean>(() => {
-    if (!GATING_ENABLED) return true;
-
-    // A. Check URL parameter FIRST on initial render
-    const urlParams = new URLSearchParams(window.location.search);
-    const access = urlParams.get('access');
-
-    if (access === 'granted') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ timestamp: Date.now() }));
-      return true;
-    }
-
-    // B. Check local browser cache for 14-day token
-    const cached = localStorage.getItem(STORAGE_KEY);
+// Helper function to safely read storage across cross-origin iframe boundaries
+function getStoredToken(): boolean {
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
     if (cached) {
-      try {
-        const { timestamp } = JSON.parse(cached);
-        const fourteenDays = EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-        if (Date.now() - timestamp < fourteenDays) {
-          return true;
-        }
-      } catch (e) {
-        localStorage.removeItem(STORAGE_KEY);
+      const { timestamp } = JSON.parse(cached);
+      const fourteenDays = EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+      if (Date.now() - timestamp < fourteenDays) {
+        return true;
       }
     }
+  } catch (e) {
+    // Storage access restricted inside iframe
+  }
+  return false;
+}
 
-    return false;
+// Helper function to safely write storage
+function setStoredToken() {
+  const payload = JSON.stringify({ timestamp: Date.now() });
+  try {
+    localStorage.setItem(STORAGE_KEY, payload);
+  } catch (e) {}
+  try {
+    sessionStorage.setItem(STORAGE_KEY, payload);
+  } catch (e) {}
+}
+
+export default function App() {
+  // Read URL parameter immediately on component evaluation
+  const urlParams = new URLSearchParams(window.location.search);
+  const accessParam = urlParams.get('access');
+
+  // Initialize authorization state
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(() => {
+    if (!GATING_ENABLED) return true;
+    if (accessParam === 'granted') return true;
+    return getStoredToken();
   });
 
   useEffect(() => {
     if (!GATING_ENABLED) return;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const access = urlParams.get('access');
-
-    // Clean URL parameter once handled to keep address bar clean
-    if (access === 'granted' || access === 'denied') {
+    // Handle incoming redirect from Guard Page
+    if (accessParam === 'granted') {
+      setStoredToken();
+      setIsAuthorized(true);
+      // Clean query parameter from address bar
       window.history.replaceState({}, document.title, window.location.pathname);
-      if (access === 'granted') {
-        setIsAuthorized(true);
-        return;
-      }
-      if (access === 'denied') {
-        setIsAuthorized(false);
-        return;
-      }
+      return;
     }
 
-    // Check if we have a valid token in localStorage
-    const cached = localStorage.getItem(STORAGE_KEY);
-    if (cached) {
-      try {
-        const { timestamp } = JSON.parse(cached);
-        const fourteenDays = EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-        if (Date.now() - timestamp < fourteenDays) {
-          setIsAuthorized(true);
-          return;
-        }
-      } catch (e) {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+    if (accessParam === 'denied') {
+      setIsAuthorized(false);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
     }
 
-    // ONLY bounce to Guard Page if user is NOT authorized and access wasn't explicitly denied
-    if (!isAuthorized && access !== 'denied') {
+    // Check if user already holds a valid token
+    if (getStoredToken()) {
+      setIsAuthorized(true);
+      return;
+    }
+
+    // If unauthorized and no parameter is present, redirect top window to Guard Page ONCE
+    if (!isAuthorized) {
       if (window.top) {
         window.top.location.href = SHOPIFY_GUARD_URL;
       } else {
         window.location.href = SHOPIFY_GUARD_URL;
       }
     }
-  }, [isAuthorized]);
+  }, []);
 
   // Default to landing page
   const [currentView, setCurrentView] = useState<ViewMode>('how_to_play');
