@@ -11,7 +11,61 @@ import { CooldownModal } from './components/CooldownModal';
 import { DarkMistBackground } from './components/DarkMistBackground';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 
+// ==========================================
+// SHOPIFY GATING CONFIGURATION
+// ==========================================
+const GATING_ENABLED = true; // Set to false when testing locally
+const SHOPIFY_GUARD_URL = 'https://corexbooks.com/pages/app-gate-investignito';
+const STORAGE_KEY = 'investignito_access_granted';
+const EXPIRY_DAYS = 14;
+
 export default function App() {
+  // ==========================================
+  // GATING AUTHENTICATION LOGIC
+  // ==========================================
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!GATING_ENABLED) {
+      setIsAuthorized(true);
+      return;
+    }
+
+    // 1. Check local cache for 14-day token
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached) {
+      try {
+        const { timestamp } = JSON.parse(cached);
+        const fourteenDays = EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+        if (Date.now() - timestamp < fourteenDays) {
+          setIsAuthorized(true);
+          return;
+        }
+      } catch (e) {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+
+    // 2. Read query parameter passed back from Shopify Guard Page
+    const urlParams = new URLSearchParams(window.location.search);
+    const access = urlParams.get('access');
+
+    if (access === 'granted') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ timestamp: Date.now() }));
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setIsAuthorized(true);
+      return;
+    }
+
+    if (access === 'denied') {
+      setIsAuthorized(false);
+      return;
+    }
+
+    // 3. No token present: Redirect user to Shopify Guard Page
+    window.location.href = SHOPIFY_GUARD_URL;
+  }, []);
+
   // Default to landing page
   const [currentView, setCurrentView] = useState<ViewMode>('how_to_play');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('case-1');
@@ -59,7 +113,6 @@ export default function App() {
     if (selectedCase.id === 'case-2') {
       setUnlockedCaseBanner('case-3');
     }
-    // Case 4 is locked even if Case 3 is solved; players are informed it will come soon
   };
 
   const handleFailedSubmission = () => {
@@ -67,10 +120,41 @@ export default function App() {
   };
 
   const isCase3Locked = selectedCase.id === 'case-3' && allProgress['case-2']?.status !== 'solved';
-  // Case #4 is locked even if Case #3 is finished; players are told it will come soon
   const isCase4Locked = selectedCase.id === 'case-4';
   const isCurrentCaseLocked = isCase3Locked || isCase4Locked;
 
+  // ==========================================
+  // UNAUTHORIZED PAYWALL SCREEN
+  // ==========================================
+  if (GATING_ENABLED && !isAuthorized) {
+    return (
+      <div className="min-h-screen bg-[#070709] text-[#f5f5f5] flex flex-col items-center justify-center p-6 text-center font-sans relative overflow-hidden">
+        <DarkMistBackground />
+        <div className="relative z-10 max-w-md w-full bg-[#121217] border border-[#23232d] rounded-xl p-8 shadow-2xl">
+          <div className="w-12 h-12 bg-[#16161c] border border-[#282832] rounded-lg flex items-center justify-center mx-auto mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e50914" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h1 className="text-2xl font-black text-[#e50914] uppercase tracking-widest mb-2">ACCESS DENIED</h1>
+          <p className="text-sm text-[#8e8e9d] mb-6 leading-relaxed">
+            An active <span className="text-white font-semibold">Investignito Subscriber</span> membership is required to access these case files.
+          </p>
+          <a
+            href={SHOPIFY_GUARD_URL}
+            className="inline-block w-full bg-[#e50914] hover:bg-[#c10711] text-white font-bold py-3 px-6 rounded-lg text-sm tracking-wider uppercase transition-colors"
+          >
+            UNLOCK DOSSIER
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // MAIN APP RENDER
+  // ==========================================
   return (
     <div className="min-h-screen bg-[#070709] text-[#f5f5f5] flex flex-col font-sans selection:bg-red-600 selection:text-white relative overflow-x-hidden">
       {/* Creepy Drifting Dark Mist & Blizzard Background */}
