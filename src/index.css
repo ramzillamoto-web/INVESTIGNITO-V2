@@ -1,0 +1,407 @@
+@import "tailwindcss";
+
+@layer utilities {
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+  }
+
+  @keyframes heartbeatGlow {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 15px rgba(220, 38, 38, 0.5), 0 0 30px rgba(185, 28, 28, 0.3);
+    }
+    50% {
+      transform: scale(1.03);
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.8), 0 0 60px rgba(220, 38, 38, 0.5);
+    }
+  }
+
+  @keyframes pulseGlowRed {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 15px rgba(220, 38, 38, 0.4), 0 0 30px rgba(185, 28, 28, 0.2);
+    }
+    50% {
+      transform: scale(1.02);
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.7), 0 0 50px rgba(220, 38, 38, 0.4);
+    }
+  }
+
+  @keyframes pulseGlowGold {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 15px rgba(217, 119, 6, 0.4), 0 0 30px rgba(180, 83, 9, 0.2);
+    }
+    50% {
+      transform: scale(1.02);
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.7), 0 0 50px rgba(217, 119, 6, 0.4);
+    }
+  }
+
+  @keyframes pulseGlowBlue {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 15px rgba(37, 99, 235, 0.4), 0 0 30px rgba(29, 78, 216, 0.2);
+    }
+    50% {
+      transform: scale(1.02);
+      box-shadow: 0 0 25px rgba(59, 130, 246, 0.7), 0 0 50px rgba(37, 99, 235, 0.4);
+    }
+  }
+
+  @keyframes pumpGreen {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 16px rgba(74, 222, 128, 0.45), 0 0 32px rgba(34, 197, 94, 0.25);
+    }
+    50% {
+      transform: scale(1.06);
+      box-shadow: 0 0 32px rgba(74, 222, 128, 0.9), 0 0 64px rgba(34, 197, 94, 0.55);
+    }
+  }
+
+  .animate-pumping-green {
+    animation: pumpGreen 1.4s ease-in-out infinite;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes modalScaleIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.95) translateY(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .animate-modal-in {
+    animation: modalScaleIn 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-shake {
+    animation: shake 0.4s ease-in-out forwards;
+  }
+
+  .animate-heartbeat-glow {
+    animation: heartbeatGlow 2s ease-in-out infinite;
+  }
+
+  .animate-pumping-red {
+    animation: pulseGlowRed 2.4s ease-in-out infinite;
+  }
+
+  .animate-pumping-gold {
+    animation: pulseGlowGold 2.4s ease-in-out infinite 0.8s;
+  }
+
+  .animate-pumping-blue {
+    animation: pulseGlowBlue 2.4s ease-in-out infinite 1.6s;
+  }
+
+  @keyframes fastHeartbeat {
+    0% {
+      transform: scale(1);
+    }
+    14% {
+      transform: scale(1.3);
+    }
+    28% {
+      transform: scale(1.08);
+    }
+    42% {
+      transform: scale(1.36);
+    }
+    70% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes heartbeatVignette {
+    0%, 100% {
+      box-shadow: inset 0 0 50px rgba(220, 38, 38, 0.25);
+    }
+    40% {
+      box-shadow: inset 0 0 130px rgba(239, 68, 68, 0.85), 0 0 80px rgba(220, 38, 38, 0.6);
+    }
+  }
+
+  @keyframes dramaticGlitchShake {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    10% { transform: translate(-8px, -4px) scale(1.03); }
+    20% { transform: translate(8px, 4px) scale(1.01); }
+    30% { transform: translate(-6px, 6px) scale(1.04); }
+    40% { transform: translate(6px, -4px) scale(0.98); }
+    50% { transform: translate(-4px, -2px) scale(1.02); }
+    60% { transform: translate(5px, 3px) scale(1.01); }
+    70% { transform: translate(-3px, 2px) scale(1); }
+    80% { transform: translate(3px, -2px) scale(1); }
+    90% { transform: translate(-1px, 1px) scale(1); }
+  }
+
+  @keyframes pulseRings {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(2.2);
+      opacity: 0;
+    }
+  }
+
+  .animate-fast-heartbeat {
+    animation: fastHeartbeat 0.45s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  }
+
+  .animate-heartbeat-vignette {
+    animation: heartbeatVignette 0.45s ease-in-out infinite;
+  }
+
+  .animate-dramatic-shake {
+    animation: dramaticGlitchShake 0.5s ease-in-out forwards;
+  }
+
+  .animate-pulse-ring {
+    animation: pulseRings 0.9s ease-out infinite;
+  }
+
+  @keyframes fill3Seconds {
+    0% {
+      width: 0%;
+    }
+    100% {
+      width: 100%;
+    }
+  }
+
+  .animate-fill-3s {
+    animation: fill3Seconds 3s linear forwards;
+  }
+
+  /* BEGIN Button Magnetic Pulling Idle Animation */
+  @keyframes beginButtonPull {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 20px rgba(220, 38, 38, 0.45), 0 0 45px rgba(185, 28, 28, 0.3), inset 0 0 12px rgba(255, 255, 255, 0.15);
+    }
+    50% {
+      transform: scale(1.04);
+      box-shadow: 0 0 35px rgba(239, 68, 68, 0.85), 0 0 75px rgba(220, 38, 38, 0.55), inset 0 0 24px rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  /* Continuous pulling ripple ring effect for idle */
+  @keyframes pullRingIdle {
+    0% {
+      transform: scale(0.96);
+      opacity: 0.65;
+    }
+    50% {
+      transform: scale(1.22);
+      opacity: 0.28;
+    }
+    100% {
+      transform: scale(1.42);
+      opacity: 0;
+    }
+  }
+
+  /* Intense Click Compression ("Pulling In") and Blast Out */
+  @keyframes intenseBeginRecoil {
+    0% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+    22% {
+      /* Deep inward pull/compression like a loaded tension spring */
+      transform: scale(0.84);
+      filter: brightness(1.7) contrast(1.25);
+    }
+    48% {
+      /* Explosive unseal blast */
+      transform: scale(1.14);
+      filter: brightness(1.45);
+    }
+    75% {
+      transform: scale(0.97);
+      filter: brightness(1.1);
+    }
+    100% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+  }
+
+  /* Concentric Shockwave blast ring 1 */
+  @keyframes beginShockwave1 {
+    0% {
+      transform: scale(0.85);
+      opacity: 1;
+      border-width: 4px;
+    }
+    100% {
+      transform: scale(3);
+      opacity: 0;
+      border-width: 1px;
+    }
+  }
+
+  /* Concentric Shockwave blast ring 2 */
+  @keyframes beginShockwave2 {
+    0% {
+      transform: scale(0.95);
+      opacity: 0.9;
+      border-width: 3px;
+    }
+    100% {
+      transform: scale(4.2);
+      opacity: 0;
+      border-width: 1px;
+    }
+  }
+
+  /* Countdown Pulse & Pop Animation for 3..2..1..START! */
+  @keyframes countdownPop {
+    0% {
+      transform: scale(1.6);
+      opacity: 0;
+      filter: blur(4px) brightness(2);
+    }
+    30% {
+      transform: scale(0.92);
+      opacity: 1;
+      filter: blur(0px) brightness(1.3);
+    }
+    60% {
+      transform: scale(1.05);
+      opacity: 1;
+      filter: brightness(1.1);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+      filter: brightness(1);
+    }
+  }
+
+  @keyframes countdownPulseRing {
+    0% {
+      transform: scale(0.9);
+      opacity: 0.9;
+      border-width: 4px;
+    }
+    100% {
+      transform: scale(2.2);
+      opacity: 0;
+      border-width: 1px;
+    }
+  }
+
+  .animate-countdown-pop {
+    animation: countdownPop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-countdown-ring {
+    animation: countdownPulseRing 0.75s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  }
+
+  /* Screen/Container Shudder on Click */
+  @keyframes beginImpactShudder {
+    0%, 100% { transform: translate(0, 0); }
+    12% { transform: translate(-6px, -3px) rotate(-0.5deg); }
+    25% { transform: translate(6px, 3px) rotate(0.5deg); }
+    40% { transform: translate(-4px, 2px); }
+    60% { transform: translate(4px, -2px); }
+    80% { transform: translate(-2px, 1px); }
+  }
+
+  /* Radiant Flash Strobe */
+  @keyframes beginFlashGlow {
+    0% { opacity: 0; }
+    25% { opacity: 0.95; }
+    100% { opacity: 0; }
+  }
+
+  .animate-begin-pull {
+    animation: beginButtonPull 1.8s ease-in-out infinite;
+  }
+
+  .animate-pull-ring-idle {
+    animation: pullRingIdle 2.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  }
+
+  .animate-begin-recoil {
+    animation: intenseBeginRecoil 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-begin-shockwave-1 {
+    animation: beginShockwave1 0.7s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  }
+
+  .animate-begin-shockwave-2 {
+    animation: beginShockwave2 0.75s 0.08s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  }
+
+  .animate-impact-shudder {
+    animation: beginImpactShudder 0.55s ease-out forwards;
+  }
+
+  .animate-begin-flash {
+    animation: beginFlashGlow 0.65s ease-out forwards;
+  }
+
+  /* Mobile Touch Responsiveness */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+html, body {
+  font-family: Arial, Helvetica, 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #060608;
+  color: #f5f5f5;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, .font-display {
+  font-family: Arial, 'Syne', Helvetica, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+code, pre, .font-mono {
+  font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+}
+
+/* Mobile text compression & readability utilities */
+@media (max-width: 640px) {
+  body {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+}
+
