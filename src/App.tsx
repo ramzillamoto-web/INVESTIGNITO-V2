@@ -15,6 +15,7 @@ import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 // SHOPIFY GATING & PRODUCT CONFIGURATION
 // ==========================================
 const GATING_ENABLED = true; // Set to false when testing locally
+const SHOPIFY_GUARD_URL = 'https://corexbooks.com/pages/app-gate-investignito';
 const SHOPIFY_LOGIN_URL = 'https://corexbooks.com/account/login?return_to=https://corexbooks.com/pages/app-gate-investignito';
 const SHOPIFY_PRODUCT_URL = 'https://corexbooks.com/products/investignito-subscription'; // UPDATE WITH YOUR PRODUCT LINK
 const STORAGE_KEY = 'investignito_access_granted';
@@ -59,13 +60,18 @@ export default function App() {
     }
 
     if (access === 'denied') {
+      // Access was explicitly checked by Guard Page and denied -> Show Paywall UI (DO NOT REDIRECT)
       window.history.replaceState({}, document.title, window.location.pathname);
       setIsAuthorized(false);
       return;
     }
 
-    // 3. No token present: Keep user on Paywall Screen (do NOT auto-redirect)
-    setIsAuthorized(false);
+    // 3. No token present and no URL parameter: Auto-bounce to Guard Page to check Shopify session/tags
+    if (window.top) {
+      window.top.location.href = SHOPIFY_GUARD_URL;
+    } else {
+      window.location.href = SHOPIFY_GUARD_URL;
+    }
   }, []);
 
   // Default to landing page
