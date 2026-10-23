@@ -84,7 +84,7 @@ export default function App() {
   const isCurrentCaseLocked = isCase3Locked || isCase4Locked;
 
   const handleOpenSubscription = () => {
-    window.location.href = 'http://account.trycorex.store/';
+    window.open('https://account.trycorex.store/', '_blank', 'noopener,noreferrer');
   };
 
   return (

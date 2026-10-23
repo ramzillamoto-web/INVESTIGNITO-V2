@@ -519,23 +519,17 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 <span>Add to Device</span>
               </button>
             )}
-            {onOpenSubscription && (
-              <a
-                id="footer-subscription-link"
-                href="http://account.trycorex.store/"
-                onClick={(e) => {
-                  if (onOpenSubscription) {
-                    e.preventDefault();
-                    onOpenSubscription();
-                  }
-                }}
-                className="text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer flex items-center gap-1.5 font-bold"
-                title="Manage Detective Subscription"
-              >
-                <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Manage Subscription</span>
-              </a>
-            )}
+            <a
+              id="footer-subscription-link"
+              href="https://account.trycorex.store/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer flex items-center gap-1.5 font-bold"
+              title="Manage Detective Subscription"
+            >
+              <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Manage Subscription</span>
+            </a>
             <span>Confidential Detective Case Records • All Rights Reserved</span>
           </div>
         </div>

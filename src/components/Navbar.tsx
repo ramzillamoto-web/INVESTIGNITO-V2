@@ -164,26 +164,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {onOpenSubscription && (
-            <a
-              id="nav-subscription-link"
-              href="http://account.trycorex.store/"
-              onClick={(e) => {
-                if (onOpenSubscription) {
-                  e.preventDefault();
-                  onOpenSubscription();
-                }
-              }}
-              className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-emerald-300 hover:text-emerald-100 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded bg-emerald-950/60 border border-emerald-500/70 hover:border-emerald-400 hover:bg-emerald-900/70 transition-all cursor-pointer shadow-sm shadow-emerald-950/50 shrink-0"
-              title="Manage Detective Subscription"
-              aria-label="Manage Subscription"
-            >
-              <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" />
-              <span className="hidden md:inline">Manage Subscription</span>
-              <span className="md:hidden hidden xs:inline">Manage Sub</span>
-              <span className="xs:hidden">Sub</span>
-            </a>
-          )}
+          <a
+            id="nav-subscription-link"
+            href="https://account.trycorex.store/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-emerald-300 hover:text-emerald-100 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded bg-emerald-950/60 border border-emerald-500/70 hover:border-emerald-400 hover:bg-emerald-900/70 transition-all cursor-pointer shadow-sm shadow-emerald-950/50 shrink-0"
+            title="Manage Detective Subscription"
+            aria-label="Manage Subscription"
+          >
+            <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" />
+            <span className="hidden sm:inline">Manage Subscription</span>
+            <span className="sm:hidden">Manage Sub</span>
+          </a>
 
           <button
             onClick={() => onOpenHelp()}

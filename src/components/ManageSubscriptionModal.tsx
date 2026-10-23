@@ -127,7 +127,9 @@ export const ManageSubscriptionModal: React.FC<ManageSubscriptionModalProps> = (
               <span>Ending in •••• 4242</span>
             </div>
             <a
-              href="http://account.trycorex.store/"
+              href="https://account.trycorex.store/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-[11px] text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1"
             >
               <span>Manage on account.trycorex.store</span>
