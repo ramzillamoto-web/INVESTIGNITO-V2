@@ -14,6 +14,12 @@ export function isIos(): boolean {
   return /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
 }
 
+export function isAndroid(): boolean {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  return /android/i.test(ua);
+}
+
 export function isStandalonePWA(): boolean {
   if (typeof window === 'undefined') return false;
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;

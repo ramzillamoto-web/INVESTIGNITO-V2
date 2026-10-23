@@ -14,6 +14,8 @@ import {
   Unlock,
   AlertTriangle,
   X,
+  CreditCard,
+  Smartphone,
 } from 'lucide-react';
 import { CaseData, CaseProgress } from '../types';
 import { InvestignitoLogo } from './InvestignitoLogo';
@@ -24,6 +26,9 @@ interface LandingViewProps {
   onSelectCase: (caseItem: CaseData) => void;
   unlockedCaseBanner?: string | null;
   onDismissUnlockBanner?: () => void;
+  onOpenSubscription?: () => void;
+  onAddToDevice?: () => void;
+  isStandalone?: boolean;
 }
 
 export const LandingView: React.FC<LandingViewProps> = ({
@@ -32,6 +37,9 @@ export const LandingView: React.FC<LandingViewProps> = ({
   onSelectCase,
   unlockedCaseBanner,
   onDismissUnlockBanner,
+  onOpenSubscription,
+  onAddToDevice,
+  isStandalone,
 }) => {
   // Map of caseId -> boolean to track expanded "See Details" independently for each case
   const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({});
@@ -124,6 +132,25 @@ export const LandingView: React.FC<LandingViewProps> = ({
           <p className="mt-1 sm:mt-2 text-xs sm:text-base font-medium text-neutral-300 max-w-2xl mx-auto tracking-tight leading-relaxed px-2">
             Step into weekly unsolved master investigations. Inspect sequential clues, cross out innocent suspects across the registry pages, and isolate the perpetrator.
           </p>
+          {onAddToDevice && (
+            <div className="mt-4 sm:mt-5 flex items-center justify-center">
+              <button
+                type="button"
+                id="landing-add-to-device-btn"
+                onClick={onAddToDevice}
+                className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-md border ${
+                  isStandalone
+                    ? 'bg-neutral-900 border-neutral-700 text-emerald-400 hover:border-emerald-500'
+                    : 'bg-neutral-900/90 border-neutral-700 hover:border-red-500 text-neutral-200 hover:text-white hover:bg-neutral-800'
+                }`}
+                title={isStandalone ? 'INVESTIGNITO is installed on your device' : 'Add INVESTIGNITO to device home screen'}
+              >
+                <Smartphone className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                <span className="font-bold">{isStandalone ? 'Running on Device ✓' : 'Add to Device'}</span>
+                {!isStandalone && <span className="text-[10px] text-neutral-400 hidden sm:inline">• Full-screen play</span>}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Case Cards List */}
@@ -476,12 +503,41 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
       {/* Footer */}
       <footer className="border-t border-neutral-800 bg-[#060608] py-6 px-4 text-center font-mono text-xs text-neutral-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <InvestignitoLogo size={18} />
             <span className="font-bold text-neutral-400">INVESTIGNITO - Weekly Case Puzzles</span>
           </div>
-          <span>Confidential Detective Case Records • All Rights Reserved</span>
+          <div className="flex items-center gap-4 text-[11px] sm:text-xs">
+            {onAddToDevice && (
+              <button
+                type="button"
+                onClick={onAddToDevice}
+                className="text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-red-500" />
+                <span>Add to Device</span>
+              </button>
+            )}
+            {onOpenSubscription && (
+              <a
+                id="footer-subscription-link"
+                href="http://account.trycorex.store/"
+                onClick={(e) => {
+                  if (onOpenSubscription) {
+                    e.preventDefault();
+                    onOpenSubscription();
+                  }
+                }}
+                className="text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer flex items-center gap-1.5 font-bold"
+                title="Manage Detective Subscription"
+              >
+                <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Manage Subscription</span>
+              </a>
+            )}
+            <span>Confidential Detective Case Records • All Rights Reserved</span>
+          </div>
         </div>
       </footer>
     </div>

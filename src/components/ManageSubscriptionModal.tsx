@@ -56,10 +56,10 @@ export const ManageSubscriptionModal: React.FC<ManageSubscriptionModalProps> = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
       <div
         id="manage-subscription-modal"
-        className="bg-[#0f0f13] border-2 border-amber-500/80 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl shadow-black/90 relative text-neutral-100 overflow-hidden"
+        className="bg-[#0f0f13] border-2 border-emerald-500/80 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl shadow-black/90 relative text-neutral-100 overflow-hidden"
       >
-        {/* Ambient Amber Glow Accent */}
-        <div className="absolute -top-12 -right-12 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Ambient Light Green Glow Accent */}
+        <div className="absolute -top-12 -right-12 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Close Button */}
         <button
@@ -72,12 +72,12 @@ export const ManageSubscriptionModal: React.FC<ManageSubscriptionModalProps> = (
 
         {/* Header */}
         <div className="flex items-center gap-3.5 mb-5 pr-8">
-          <div className="w-12 h-12 rounded-xl bg-amber-950/80 border border-amber-600/80 flex items-center justify-center text-amber-400 shrink-0 shadow-lg">
+          <div className="w-12 h-12 rounded-xl bg-emerald-950/80 border border-emerald-600/80 flex items-center justify-center text-emerald-400 shrink-0 shadow-lg">
             <CreditCard className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-black uppercase tracking-widest px-2 py-0.5 rounded bg-amber-950/90 text-amber-300 border border-amber-700/80">
+              <span className="text-[10px] font-mono font-black uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-700/80">
                 ACTIVE SUBSCRIBER
               </span>
               <span className="text-[10px] font-mono font-bold text-emerald-400 flex items-center gap-1">
@@ -126,13 +126,13 @@ export const ManageSubscriptionModal: React.FC<ManageSubscriptionModalProps> = (
               </div>
               <span>Ending in •••• 4242</span>
             </div>
-            <button
-              onClick={handleUpdatePayment}
-              disabled={isUpdating}
-              className="text-[11px] text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer hover:opacity-80 transition-opacity"
+            <a
+              href="http://account.trycorex.store/"
+              className="text-[11px] text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1"
             >
-              {isUpdating ? 'Updating...' : 'Update Card'}
-            </button>
+              <span>Manage on account.trycorex.store</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
         </div>
 

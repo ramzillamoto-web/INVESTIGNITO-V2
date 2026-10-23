@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, ChevronLeft, HelpCircle, Maximize2, Minimize2 } from 'lucide-react';
+import { Clock, ChevronLeft, HelpCircle, Maximize2, Minimize2, CreditCard, Smartphone, Check } from 'lucide-react';
 import { ViewMode, CaseData, CaseProgress } from '../types';
 import { formatTime } from '../utils/storage';
 import { InvestignitoLogo } from './InvestignitoLogo';
@@ -11,6 +11,9 @@ interface NavbarProps {
   caseProgress: CaseProgress | null;
   onNavigate: (view: ViewMode) => void;
   onOpenHelp: () => void;
+  onOpenSubscription?: () => void;
+  onAddToDevice?: () => void;
+  isStandalone?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -19,6 +22,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   caseProgress,
   onNavigate,
   onOpenHelp,
+  onOpenSubscription,
+  onAddToDevice,
+  isStandalone,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
 
@@ -129,6 +135,54 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
             </div>
+          )}
+
+          {onAddToDevice && (
+            <button
+              id="nav-add-to-device-btn"
+              onClick={onAddToDevice}
+              className={`flex items-center gap-1.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider px-2 sm:px-2.5 py-1 sm:py-1.5 rounded transition-all cursor-pointer ${
+                isStandalone
+                  ? 'bg-neutral-900 border border-neutral-700 text-emerald-400 hover:border-emerald-500'
+                  : 'bg-red-950/40 border border-red-600/70 hover:border-red-400 text-red-200 hover:text-white shadow-sm hover:bg-red-900/50'
+              }`}
+              title={isStandalone ? 'INVESTIGNITO is added to your device' : 'Add INVESTIGNITO to device home screen'}
+              aria-label="Add to Device"
+            >
+              {isStandalone ? (
+                <>
+                  <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">On Device</span>
+                </>
+              ) : (
+                <>
+                  <Smartphone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400 shrink-0" />
+                  <span className="hidden xs:inline">Add to Device</span>
+                  <span className="xs:hidden">Add</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {onOpenSubscription && (
+            <a
+              id="nav-subscription-link"
+              href="http://account.trycorex.store/"
+              onClick={(e) => {
+                if (onOpenSubscription) {
+                  e.preventDefault();
+                  onOpenSubscription();
+                }
+              }}
+              className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-emerald-300 hover:text-emerald-100 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded bg-emerald-950/60 border border-emerald-500/70 hover:border-emerald-400 hover:bg-emerald-900/70 transition-all cursor-pointer shadow-sm shadow-emerald-950/50 shrink-0"
+              title="Manage Detective Subscription"
+              aria-label="Manage Subscription"
+            >
+              <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" />
+              <span className="hidden md:inline">Manage Subscription</span>
+              <span className="md:hidden hidden xs:inline">Manage Sub</span>
+              <span className="xs:hidden">Sub</span>
+            </a>
           )}
 
           <button
