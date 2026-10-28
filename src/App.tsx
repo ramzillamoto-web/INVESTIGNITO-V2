@@ -1,7 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Check } from 'lucide-react';
 import { CASE_1_DATA, CASES_DATA } from './data/cases';
 import { ViewMode, CaseData, CaseProgress } from './types';
-import { loadAllProgress, saveAllProgress, getInitialProgress } from './utils/storage';
+import {
+  loadAllProgress,
+  saveAllProgress,
+  getInitialProgress,
+  loadSession,
+  saveSession,
+  hasSeenHowTo,
+  markSeenHowTo,
+  onProgressSaved,
+} from './utils/storage';
 import { Navbar } from './components/Navbar';
 import { LandingView } from './components/LandingView';
 import { CaseDetailView } from './components/CaseDetailView';
@@ -23,24 +33,84 @@ export default function App() {
     closeModal: handleCloseAddToDeviceModal,
   } = useAddToDevice();
 
-  // Default to landing page
-  const [currentView, setCurrentView] = useState<ViewMode>('how_to_play');
-  const [selectedCaseId, setSelectedCaseId] = useState<string>('case-1');
+  // Restore where player left off, falling back to defaults
+  const [currentView, setCurrentView] = useState<ViewMode>(() => {
+    const session = loadSession();
+    return session ? session.view : 'how_to_play';
+  });
+  const [selectedCaseId, setSelectedCaseId] = useState<string>(() => {
+    const session = loadSession();
+    return session ? session.selectedCaseId : 'case-1';
+  });
+
   const [allProgress, setAllProgress] = useState<Record<string, CaseProgress>>(() => {
     return loadAllProgress();
   });
 
-  // Always show "How to Play" onboarding modal on load / refresh (no persistent "seen it" flag)
-  const [showHelpModal, setShowHelpModal] = useState<boolean>(true);
+  // Save session when view or selected case changes
+  useEffect(() => {
+    saveSession({ view: currentView, selectedCaseId });
+  }, [currentView, selectedCaseId]);
+
+  // Show "How to Play" modal only on first visit
+  const [showHelpModal, setShowHelpModal] = useState<boolean>(() => {
+    return !hasSeenHowTo();
+  });
   const [showCongratulationsModal, setShowCongratulationsModal] = useState<boolean>(false);
   const [showCooldownModal, setShowCooldownModal] = useState<boolean>(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState<boolean>(false);
   const [unlockedCaseBanner, setUnlockedCaseBanner] = useState<string | null>(null);
+  const [showSavedIndicator, setShowSavedIndicator] = useState<boolean>(false);
 
   // Sync with localStorage
   useEffect(() => {
     saveAllProgress(allProgress);
   }, [allProgress]);
+
+  // Save immediately when page is hidden or closed (visibilitychange and pagehide)
+  const allProgressRef = useRef(allProgress);
+  allProgressRef.current = allProgress;
+
+  useEffect(() => {
+    const handleSaveImmediately = () => {
+      saveAllProgress(allProgressRef.current, true);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleSaveImmediately();
+      }
+    };
+
+    window.addEventListener('pagehide', handleSaveImmediately);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('pagehide', handleSaveImmediately);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // Brief "Progress saved" indicator on saves
+  useEffect(() => {
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    const unsubscribe = onProgressSaved(() => {
+      setShowSavedIndicator(true);
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => {
+        setShowSavedIndicator(false);
+      }, 1800);
+    });
+    return () => {
+      unsubscribe();
+      if (hideTimer) clearTimeout(hideTimer);
+    };
+  }, []);
+
+  const handleCloseHelpModal = () => {
+    setShowHelpModal(false);
+    markSeenHowTo();
+  };
 
   const selectedCase = CASES_DATA.find((c) => c.id === selectedCaseId) || CASE_1_DATA;
   const currentCaseProgress = allProgress[selectedCase.id] || getInitialProgress(selectedCase.id);
@@ -171,7 +241,7 @@ export default function App() {
       {/* Detective Rules / Manual Modal */}
       <HowToPlayModal
         isOpen={showHelpModal}
-        onClose={() => setShowHelpModal(false)}
+        onClose={handleCloseHelpModal}
       />
 
       {/* Detective Membership & Billing Modal */}
@@ -186,6 +256,19 @@ export default function App() {
         onClose={handleCloseAddToDeviceModal}
         deferredPrompt={deferredPrompt}
       />
+
+      {/* Unobtrusive "Progress saved" indicator */}
+      {showSavedIndicator && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900/95 border border-emerald-500/60 text-emerald-400 text-xs font-mono shadow-2xl backdrop-blur-md pointer-events-none transition-all duration-300 animate-fade-in"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
+          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <span className="text-neutral-200 font-bold tracking-wide">Progress saved</span>
+        </div>
+      )}
     </div>
   );
 }

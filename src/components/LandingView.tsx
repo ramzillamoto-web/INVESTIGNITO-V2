@@ -16,8 +16,10 @@ import {
   X,
   CreditCard,
   Smartphone,
+  Check,
 } from 'lucide-react';
 import { CaseData, CaseProgress } from '../types';
+import { formatTime } from '../utils/storage';
 import { InvestignitoLogo } from './InvestignitoLogo';
 
 interface LandingViewProps {
@@ -53,17 +55,26 @@ export const LandingView: React.FC<LandingViewProps> = ({
   };
 
   const isCase2Solved = allProgress['case-2']?.status === 'solved';
+  const inProgressCase = cases.find((c) => allProgress[c.id]?.status === 'in_progress');
+
+  // Playable cases excluding coming soon
+  const COMING_SOON_CASE_IDS = ['case-4'];
+  const playableCases = cases.filter((c) => !COMING_SOON_CASE_IDS.includes(c.id));
+  const playableCaseCount = playableCases.length;
+  const playableTotal = playableCaseCount || 3;
+  const solvedPlayableCount = playableCases.filter((c) => allProgress[c.id]?.status === 'solved').length;
+  const playablePercent = playableTotal > 0 ? Math.round((solvedPlayableCount / playableTotal) * 100) : 0;
+  const allPlayableSolved = solvedPlayableCount === playableTotal && playableTotal > 0;
+  const suspectsCount = playableCases[0]?.suspects.length || 600;
+  const cluesCount = playableCases[0]?.clues.length || 9;
 
   return (
     <div
       id="landing-page-container"
-      className="w-full min-h-[calc(100vh-61px)] flex flex-col justify-between bg-[#0e0e11] text-[#f5f5f5]"
+      className="w-full min-h-[calc(100dvh-61px)] flex flex-col justify-between bg-[#0e0e11] text-[#f5f5f5] overflow-x-hidden"
     >
-      {/* Red Top Accent Stripe */}
-      <div className="w-full h-1.5 bg-red-600 shadow-sm shadow-red-600/50" />
-
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-8 sm:py-12 w-full flex-1 flex flex-col justify-center space-y-8 sm:space-y-12">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 pt-3 sm:pt-12 pb-6 sm:pb-12 w-full flex-1 flex flex-col justify-center space-y-6 sm:space-y-12">
         
         {/* Case Just Unlocked Banner Notification */}
         {unlockedCaseBanner && (
@@ -95,7 +106,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   const targetCase = cases.find((c) => c.id === unlockedCaseBanner) || cases.find((c) => c.id === 'case-3');
                   if (targetCase) onSelectCase(targetCase);
                 }}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-black text-xs uppercase tracking-wider transition-colors shadow-lg flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-black text-xs uppercase tracking-wider transition-colors shadow-lg flex items-center gap-1.5 cursor-pointer min-h-[44px] touch-manipulation active:scale-[0.98]"
               >
                 <span>Solve {unlockedCaseBanner === 'case-4' ? 'Case 4' : 'Case 3'} Now</span>
                 <ArrowRight className="w-4 h-4" />
@@ -104,7 +115,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 <button
                   type="button"
                   onClick={onDismissUnlockBanner}
-                  className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors"
+                  className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
                   aria-label="Dismiss banner"
                 >
                   <X className="w-5 h-5" />
@@ -114,47 +125,148 @@ export const LandingView: React.FC<LandingViewProps> = ({
           </div>
         )}
 
-        {/* Top Bureau Header */}
-        <div className="text-center mb-2 flex flex-col items-center">
-          <div className="mb-3 sm:mb-5 flex flex-col items-center group cursor-default">
-            <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl bg-neutral-900 border-2 border-neutral-800 flex items-center justify-center p-2.5 sm:p-3 shadow-2xl mb-2 sm:mb-3 group-hover:border-neutral-700 transition-colors">
-              <InvestignitoLogo size={52} />
-            </div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded bg-neutral-900 border border-neutral-700 text-red-500 text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider sm:tracking-widest">
-              <Fingerprint className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
-              <span>INVESTIGNITO • WEEKLY CASE PUZZLES</span>
-            </div>
+        {/* Clean, Compact Styled Hero */}
+        <div className="relative text-center mb-1 sm:mb-2 flex flex-col items-center">
+          {/* Subtle red radial glow & faint crime scan-line texture behind hero */}
+          <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden select-none flex items-center justify-center">
+            <div className="w-[280px] xs:w-[340px] sm:w-[520px] h-[160px] sm:h-[240px] bg-red-600/10 sm:bg-red-600/15 rounded-full blur-3xl" />
+            <div className="absolute inset-0 opacity-[0.035] bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(255,255,255,0.4)_4px)]" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 sm:w-64 h-[1px] bg-gradient-to-r from-transparent via-red-500/40 to-transparent" />
           </div>
-          <h1 className="text-2xl sm:text-5xl lg:text-7xl font-black tracking-tighter text-[#f5f5f5] font-display uppercase max-w-4xl mx-auto leading-tight sm:leading-none mb-3 sm:mb-4">
+
+          {/* Desktop-only bureau icon; hidden on mobile */}
+          <div className="hidden sm:flex w-20 h-20 rounded-2xl bg-neutral-900 border-2 border-neutral-800 items-center justify-center p-2.5 shadow-2xl mb-3 group-hover:border-neutral-700 transition-colors shrink-0">
+            <InvestignitoLogo size={42} />
+          </div>
+
+          {/* Tag Badge with Blinking Recording Dot */}
+          <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full sm:rounded bg-neutral-900/95 border border-neutral-700/80 text-red-500 text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider sm:tracking-widest shadow-inner mb-2 sm:mb-3">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 motion-reduce:hidden" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600" />
+            </span>
+            <Fingerprint className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500 shrink-0" />
+            <span className="tracking-tight sm:tracking-widest truncate">INVESTIGNITO • WEEKLY CASE PUZZLES</span>
+          </div>
+
+          {/* Headline with Glowing Red Accent */}
+          <h1 className="text-[22px] xs:text-2xl sm:text-5xl lg:text-7xl font-black tracking-tight sm:tracking-tighter text-[#f5f5f5] font-display uppercase max-w-4xl mx-auto leading-[1.08] sm:leading-none mb-1.5 sm:mb-3">
             INSPECT THE CLUES.<br />
-            <span className="text-red-600">NAME THE KILLER.</span>
+            <span className="text-red-500 sm:text-red-600 font-black [text-shadow:0_0_16px_rgba(239,68,68,0.55)]">
+              NAME THE KILLER.
+            </span>
           </h1>
-          <p className="mt-1 sm:mt-2 text-xs sm:text-base font-medium text-neutral-300 max-w-2xl mx-auto tracking-tight leading-relaxed px-2">
+
+          {/* Paragraph: 2 short lines on mobile */}
+          <p className="text-xs sm:text-base font-medium text-neutral-300 max-w-xl mx-auto tracking-tight leading-snug sm:leading-relaxed px-2 line-clamp-2 mb-3 sm:mb-5">
             Step into weekly unsolved master investigations. Inspect sequential clues, cross out innocent suspects across the registry pages, and isolate the perpetrator.
           </p>
-          {onAddToDevice && (
-            <div className="mt-4 sm:mt-5 flex items-center justify-center">
+
+          {/* Primary Action Button Container */}
+          <div className="w-full max-w-xs sm:max-w-md mx-auto px-1 sm:px-2">
+            {inProgressCase ? (
               <button
                 type="button"
-                id="landing-add-to-device-btn"
-                onClick={onAddToDevice}
-                className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-mono uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-md border ${
-                  isStandalone
-                    ? 'bg-neutral-900 border-neutral-700 text-emerald-400 hover:border-emerald-500'
-                    : 'bg-neutral-900/90 border-neutral-700 hover:border-red-500 text-neutral-200 hover:text-white hover:bg-neutral-800'
-                }`}
-                title={isStandalone ? 'INVESTIGNITO is installed on your device' : 'Add INVESTIGNITO to device home screen'}
+                id="hero-continue-case-btn"
+                onClick={() => onSelectCase(inProgressCase)}
+                className="w-full relative overflow-hidden inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-mono font-black text-xs sm:text-sm uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg shadow-red-950/70 border border-red-500/80 min-h-[46px] touch-manipulation active:scale-[0.98] transition-all cursor-pointer group animate-[pulse_4s_ease-in-out_infinite] motion-reduce:animate-none"
               >
-                <Smartphone className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                <span className="font-bold">{isStandalone ? 'Running on Device ✓' : 'Add to Device'}</span>
-                {!isStandalone && <span className="text-[10px] text-neutral-400 hidden sm:inline">• Full-screen play</span>}
+                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent group-hover:translate-x-full transition-transform duration-1000 motion-reduce:hidden" />
+                <ShieldAlert className="w-4 h-4 text-white shrink-0" />
+                <span>CONTINUE CASE ({inProgressCase.code})</span>
+                <ArrowRight className="w-4 h-4 text-white shrink-0" />
               </button>
+            ) : (
+              <button
+                type="button"
+                id="hero-start-investigating-btn"
+                onClick={() => {
+                  const target = document.getElementById('case-cards-list') || document.getElementById(`featured-case-card-${cases[0]?.id}`);
+                  target?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="w-full relative overflow-hidden inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white font-mono font-black text-xs sm:text-sm uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg shadow-red-950/70 border border-red-500/80 min-h-[46px] touch-manipulation active:scale-[0.98] transition-all cursor-pointer group animate-[pulse_4s_ease-in-out_infinite] motion-reduce:animate-none"
+              >
+                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent group-hover:translate-x-full transition-transform duration-1000 motion-reduce:hidden" />
+                <ShieldAlert className="w-4 h-4 text-white shrink-0" />
+                <span>START INVESTIGATING</span>
+                <ArrowRight className="w-4 h-4 text-white shrink-0" />
+              </button>
+            )}
+
+            {/* Small Secondary Text Link for Add to Device */}
+            {onAddToDevice && (
+              <div className="mt-1.5 text-center">
+                <button
+                  type="button"
+                  id="hero-add-to-device-link"
+                  onClick={onAddToDevice}
+                  className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-mono font-medium text-neutral-400 hover:text-red-400 transition-colors py-0.5 px-2 cursor-pointer touch-manipulation active:scale-95 min-h-[32px]"
+                >
+                  <Smartphone className="w-3 h-3 text-red-500 shrink-0" />
+                  <span>{isStandalone ? 'Installed on Device ✓' : 'Add to Device for full-screen play'}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Compact Single-Line Stats Row */}
+            <div className="mt-2 flex items-center justify-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-mono uppercase text-neutral-400 tracking-wider whitespace-nowrap overflow-hidden">
+              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300 font-semibold shrink-0">
+                {playableCaseCount} CASES
+              </span>
+              <span className="text-neutral-600 shrink-0">•</span>
+              <span className="px-1.5 sm:px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300 font-semibold shrink-0">
+                {suspectsCount} SUSPECTS EACH
+              </span>
+              <span className="text-neutral-600 hidden xs:inline shrink-0">•</span>
+              <span className="hidden xs:inline-block px-1.5 sm:px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300 font-semibold shrink-0">
+                {cluesCount} CLUES
+              </span>
             </div>
-          )}
+
+            {/* Segmented Progress Strip Under Hero */}
+            <div className="mt-3 pt-2.5 text-left">
+              <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
+                <span className="font-bold text-neutral-300 flex items-center gap-1">
+                  {allPlayableSolved && <Check className="w-3 h-3 text-emerald-400 shrink-0" />}
+                  <span>{solvedPlayableCount} OF {playableTotal} CASES SOLVED</span>
+                </span>
+                <span className={allPlayableSolved ? "text-emerald-400 font-bold" : "text-red-400 font-semibold"}>
+                  {playablePercent}%
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 w-full">
+                {playableCases.map((caseItem) => {
+                  const isSolved = allProgress[caseItem.id]?.status === 'solved';
+                  const isInProgress = allProgress[caseItem.id]?.status === 'in_progress';
+                  return (
+                    <div
+                      key={caseItem.id}
+                      className="relative h-1.5 sm:h-2 rounded-full overflow-hidden bg-neutral-900 border border-neutral-800"
+                      title={`${caseItem.code}: ${isSolved ? 'Solved' : isInProgress ? 'In Progress' : 'Not Started'}`}
+                    >
+                      <div
+                        className={`h-full w-full transition-all duration-500 motion-reduce:transition-none ${
+                          isSolved
+                            ? allPlayableSolved
+                              ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
+                              : 'bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.5)]'
+                            : isInProgress
+                            ? 'bg-red-950 border-r-2 border-red-500 animate-pulse motion-reduce:animate-none'
+                            : 'bg-transparent'
+                        }`}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Single thin red divider line below strip */}
+              <div className="mt-3 w-full h-[1px] bg-gradient-to-r from-transparent via-red-600/40 to-transparent" />
+            </div>
+          </div>
         </div>
 
         {/* Case Cards List */}
-        <div className="space-y-12">
+        <div id="case-cards-list" className="space-y-8 sm:space-y-12">
           {cases.map((caseItem) => {
             const progress = allProgress[caseItem.id] || { status: 'unsolved' };
             const showDetails = !!expandedDetails[caseItem.id];
@@ -176,13 +288,13 @@ export const LandingView: React.FC<LandingViewProps> = ({
                     : 'border-red-600 sm:border-neutral-800 sm:border-y-red-600 hover:border-neutral-700'
                 }`}
               >
-                <div className="p-4 sm:p-6 lg:p-7">
+                <div className="p-3.5 sm:p-6 lg:p-7">
                   {/* Strict Horizontal Flex Row Container on Desktop */}
-                  <div className="flex flex-col md:flex-row md:items-stretch gap-5 lg:gap-7">
+                  <div className="flex flex-col md:flex-row md:items-stretch gap-4 sm:gap-5 lg:gap-7">
                     
-                    {/* Left Column: Fixed 300px container holding square crime scene image on far left */}
+                    {/* Left Column: 16:9 on Mobile, Fixed 300px square on Desktop */}
                     <div className="w-full md:w-[300px] shrink-0 flex flex-col justify-start">
-                      <div className="relative w-full aspect-square rounded-xl bg-neutral-950 p-2 border-2 border-neutral-800 shadow-2xl overflow-hidden flex flex-col justify-between group">
+                      <div className="relative w-full aspect-video md:aspect-square rounded-xl bg-neutral-950 p-1.5 sm:p-2 border-2 border-neutral-800 shadow-2xl overflow-hidden flex flex-col justify-between group">
                         
                         {/* Atmospheric Glow */}
                         <div
@@ -199,8 +311,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                           }`}
                         />
 
-                        {/* Top Crime Scene Header Overlay */}
-                        <div className="absolute top-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-none">
+                        {/* Top Crime Scene Header Overlay Chips */}
+                        <div className="absolute top-2 left-2 right-2 sm:top-2.5 sm:left-2.5 sm:right-2.5 z-20 flex items-center justify-between pointer-events-none">
                           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/85 backdrop-blur-md border border-neutral-800 text-[10px] font-mono font-black uppercase text-neutral-200">
                             {isCase4 ? (
                               <>
@@ -211,6 +323,16 @@ export const LandingView: React.FC<LandingViewProps> = ({
                               <>
                                 <Lock className="w-3 h-3 text-amber-500" />
                                 <span>RESTRICTED • {caseItem.code.toUpperCase()}</span>
+                              </>
+                            ) : progress.status === 'solved' ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-400" />
+                                <span className="text-emerald-400">SOLVED • {caseItem.code.toUpperCase()}</span>
+                              </>
+                            ) : progress.status === 'in_progress' ? (
+                              <>
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
+                                <span className="text-red-400">ACTIVE • {caseItem.code.toUpperCase()}</span>
                               </>
                             ) : (
                               <>
@@ -231,8 +353,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                         <div className={`absolute bottom-1.5 left-1.5 w-3 h-3 border-b-2 border-l-2 ${isLocked ? 'border-amber-600' : 'border-red-500'} z-20 pointer-events-none`} />
                         <div className={`absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 ${isLocked ? 'border-amber-600' : 'border-red-500'} z-20 pointer-events-none`} />
 
-                        {/* Square Image Container with full object-cover filling frame */}
-                        <div className="relative w-full h-full rounded-lg overflow-hidden bg-black flex items-center justify-center">
+                        {/* Image Container with full object-cover filling frame */}
+                        <div className="relative w-full h-full rounded-lg overflow-hidden bg-black flex items-center justify-center aspect-video md:aspect-square">
                           <img
                             src={sceneImage}
                             alt={`${caseItem.title} Crime Scene`}
@@ -241,16 +363,17 @@ export const LandingView: React.FC<LandingViewProps> = ({
                               isLocked ? 'filter grayscale contrast-125 brightness-75' : ''
                             }`}
                             loading="lazy"
+                            decoding="async"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
 
                           {/* Lock Overlay on Image */}
                           {isLocked && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-black/60 backdrop-blur-[2px] text-center pointer-events-none">
-                              <div className="w-12 h-12 rounded-full bg-neutral-900/90 border border-amber-500/60 flex items-center justify-center text-amber-400 mb-2 shadow-lg">
-                                {isCase4 ? <Clock className="w-6 h-6 animate-pulse" /> : <Lock className="w-6 h-6" />}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-[2px] text-center pointer-events-none">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-neutral-900/90 border border-amber-500/60 flex items-center justify-center text-amber-400 mb-1.5 sm:mb-2 shadow-lg">
+                                {isCase4 ? <Clock className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" /> : <Lock className="w-5 h-5 sm:w-6 sm:h-6" />}
                               </div>
-                              <span className="text-[10px] font-mono font-black uppercase tracking-widest text-amber-300 bg-black/80 px-2.5 py-1 rounded border border-neutral-800">
+                              <span className="text-[9px] sm:text-[10px] font-mono font-black uppercase tracking-widest text-amber-300 bg-black/80 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded border border-neutral-800">
                                 {isCase4 ? 'COMING SOON!' : 'COMPLETE CASE 2'}
                               </span>
                             </div>
@@ -258,22 +381,22 @@ export const LandingView: React.FC<LandingViewProps> = ({
                         </div>
 
                         {/* Bottom Scene Bar Overlay */}
-                        <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-auto">
+                        <div className="absolute bottom-2 left-2 right-2 sm:bottom-2.5 sm:left-2.5 sm:right-2.5 z-20 flex items-center justify-between pointer-events-auto">
                           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/85 backdrop-blur-md border border-neutral-800 text-[10px] font-mono text-neutral-300">
-                            <Eye className="w-3 h-3 text-amber-400" />
-                            <span className="font-bold truncate max-w-[150px] sm:max-w-[180px]">
+                            <Eye className="w-3 h-3 text-amber-400 shrink-0" />
+                            <span className="font-bold truncate max-w-[130px] sm:max-w-[180px]">
                               {caseItem.scene}
                             </span>
                           </div>
 
-                          <span className="px-2 py-0.5 rounded bg-black/85 text-neutral-400 border border-neutral-800 text-[9px] font-mono">
+                          <span className="px-2 py-0.5 rounded bg-black/85 text-neutral-400 border border-neutral-800 text-[9px] font-mono shrink-0">
                             {caseItem.timeOfCrime?.split('(')[0]?.trim() || 'Night'}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Right Column: flex-grow: 1 content area adjacent to image */}
+                    {/* Right Column: flex-grow: 1 content area */}
                     <div className="flex-1 flex flex-col justify-between min-w-0">
                       <div>
                         {/* Top Header Metadata Tags Bar */}
@@ -282,40 +405,40 @@ export const LandingView: React.FC<LandingViewProps> = ({
                             <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider bg-red-600 text-white shadow-md">
                               {caseItem.code.toUpperCase()} CASE FILE
                             </span>
-                            <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-bold text-neutral-300 bg-neutral-900 border border-neutral-800">
-                              {caseItem.totalPages} PAGES • {caseItem.suspects.length} NAMES
+                            <span className="hidden xs:inline-block px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-bold text-neutral-300 bg-neutral-900 border border-neutral-800">
+                              {caseItem.totalPages} PAGES
                             </span>
                             {isLocked ? (
                               <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-widest text-amber-400 px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-amber-950/80 border border-amber-800/80 flex items-center gap-1">
                                 <Lock className="w-3 h-3 text-amber-400" />
                                 {isCase4 ? 'LOCKED (COMING SOON)' : 'LOCKED (SOLVE CASE 2)'}
                               </span>
-                            ) : progress.status === 'unsolved' ? (
-                              <span className="text-[10px] sm:text-xs font-mono font-bold uppercase text-neutral-400 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded bg-neutral-900 border border-neutral-800">
-                                (UNSOLVED)
-                              </span>
                             ) : progress.status === 'in_progress' ? (
-                              <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-widest text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-red-600 animate-pulse">
-                                (IN PROGRESS)
+                              <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-red-600 animate-pulse flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-white" />
+                                <span>IN PROGRESS ({formatTime(progress.elapsedSeconds)})</span>
+                              </span>
+                            ) : progress.status === 'solved' ? (
+                              <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-emerald-300 px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-emerald-950/90 border border-emerald-500/80 flex items-center gap-1">
+                                <Check className="w-3 h-3 text-emerald-400" />
+                                <span>SOLVED {progress.solveTimeSeconds ? `(${formatTime(progress.solveTimeSeconds)})` : ''}</span>
                               </span>
                             ) : (
-                              <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-widest text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-emerald-600">
-                                (SOLVED)
+                              <span className="text-[10px] sm:text-xs font-mono font-bold uppercase text-neutral-400 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded bg-neutral-900 border border-neutral-800">
+                                NOT STARTED
                               </span>
                             )}
                           </div>
 
-                          {caseItem.id === 'case-1' && (
-                            <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-mono font-bold text-neutral-300">
-                              <span className="flex items-center gap-1 sm:gap-1.5 bg-neutral-950 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded border border-neutral-800">
-                                <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500" />
-                                {caseItem.estimatedTime}
-                              </span>
-                              <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded bg-neutral-950 text-neutral-200 border border-neutral-800">
-                                {caseItem.difficulty.toUpperCase()}
-                              </span>
-                            </div>
-                          )}
+                          <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-mono font-bold text-neutral-300">
+                            <span className="flex items-center gap-1 sm:gap-1.5 bg-neutral-950 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded border border-neutral-800">
+                              <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500" />
+                              {caseItem.estimatedTime}
+                            </span>
+                            <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded bg-neutral-950 text-neutral-200 border border-neutral-800">
+                              {caseItem.difficulty.toUpperCase()}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Title */}
@@ -324,26 +447,26 @@ export const LandingView: React.FC<LandingViewProps> = ({
                         </h2>
 
                         {/* Tagline + See Details button on same horizontal row */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
-                          <p className="text-[11px] sm:text-sm font-bold text-red-500 uppercase tracking-wider sm:tracking-widest">
+                        <div className="flex items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
+                          <p className="text-[11px] sm:text-sm font-bold text-red-500 uppercase tracking-wider sm:tracking-widest truncate flex-1">
                             {caseItem.tagline}
                           </p>
                           <button
                             id={`btn-landing-see-details-${caseItem.id}`}
                             type="button"
                             onClick={() => toggleDetails(caseItem.id)}
-                            className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer select-none touch-manipulation active:scale-[0.98] ${
+                            className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1 rounded-md text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer select-none touch-manipulation min-h-[36px] sm:min-h-0 active:scale-[0.98] shrink-0 ${
                               showDetails
                                 ? 'bg-neutral-800 border-red-500 text-red-400 shadow-md ring-1 ring-red-500/50'
                                 : 'bg-neutral-950 border-neutral-800 text-neutral-300 hover:bg-neutral-800 hover:text-white hover:border-neutral-600'
                             }`}
                           >
-                            <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400" />
-                            <span>{showDetails ? 'Hide Details' : 'See Details'}</span>
+                            <Info className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                            <span>{showDetails ? 'Hide' : 'See Details'}</span>
                             {showDetails ? (
-                              <ChevronUp className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                              <ChevronUp className="w-3.5 h-3.5" />
                             ) : (
-                              <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                              <ChevronDown className="w-3.5 h-3.5" />
                             )}
                           </button>
                         </div>
@@ -373,38 +496,38 @@ export const LandingView: React.FC<LandingViewProps> = ({
                           </div>
                         )}
 
-                        {/* Structured Metadata Info Boxes (3 Columns) */}
+                        {/* Compact Row of 3 Stat Chips (Suspects, Clues, Time) */}
                         <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 text-xs font-mono text-neutral-300 mb-3 sm:mb-4">
-                          <div className="p-2 sm:p-3 rounded-lg bg-[#0e0e11] border border-neutral-800">
+                          <div className="p-2 sm:p-3 rounded-lg bg-[#0e0e11] border border-neutral-800 text-center sm:text-left">
                             <span className="text-neutral-500 block uppercase font-bold text-[8px] sm:text-[10px] tracking-wider sm:tracking-widest">
-                              VICTIM
-                            </span>
-                            <span className="text-white font-black text-[11px] sm:text-sm truncate block mt-0.5">
-                              {caseItem.victim}
-                            </span>
-                          </div>
-                          <div className="p-2 sm:p-3 rounded-lg bg-[#0e0e11] border border-neutral-800">
-                            <span className="text-neutral-500 block uppercase font-bold text-[8px] sm:text-[10px] tracking-wider sm:tracking-widest">
-                              CRIME SCENE
-                            </span>
-                            <span className="text-white font-black text-[11px] sm:text-sm truncate block mt-0.5">
-                              {caseItem.scene}
-                            </span>
-                          </div>
-                          <div className="p-2 sm:p-3 rounded-lg bg-[#0e0e11] border border-neutral-800">
-                            <span className="text-neutral-500 block uppercase font-bold text-[8px] sm:text-[10px] tracking-wider sm:tracking-widest">
-                              LEDGER
+                              SUSPECTS
                             </span>
                             <span className="text-white font-black text-[11px] sm:text-sm truncate block mt-0.5">
                               {caseItem.suspects.length} Names
                             </span>
                           </div>
+                          <div className="p-2 sm:p-3 rounded-lg bg-[#0e0e11] border border-neutral-800 text-center sm:text-left">
+                            <span className="text-neutral-500 block uppercase font-bold text-[8px] sm:text-[10px] tracking-wider sm:tracking-widest">
+                              CLUES
+                            </span>
+                            <span className="text-white font-black text-[11px] sm:text-sm truncate block mt-0.5">
+                              {caseItem.clues.length} Clues
+                            </span>
+                          </div>
+                          <div className="p-2 sm:p-3 rounded-lg bg-[#0e0e11] border border-neutral-800 text-center sm:text-left">
+                            <span className="text-neutral-500 block uppercase font-bold text-[8px] sm:text-[10px] tracking-wider sm:tracking-widest">
+                              EST. TIME
+                            </span>
+                            <span className="text-white font-black text-[11px] sm:text-sm truncate block mt-0.5">
+                              {caseItem.estimatedTime}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Bottom Row: Guest & Clue Count Info Left + Bottom Right CTA Button */}
+                      {/* Bottom Row: Stat Summary Left + Full-Width Action Button */}
                       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 pt-2.5 sm:pt-3 border-t border-neutral-800/80">
-                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-mono uppercase font-bold text-neutral-400">
+                        <div className="hidden sm:flex items-center gap-1.5 text-[10px] sm:text-xs font-mono uppercase font-bold text-neutral-400">
                           <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 shrink-0" />
                           <span>
                             {caseItem.suspects.length} {isCase3 ? 'PASSENGERS' : isCase4 ? 'GUILD MEMBERS' : 'GUESTS'} • {caseItem.clues.length} CLUES • {caseItem.totalPages} PAGES
@@ -416,21 +539,43 @@ export const LandingView: React.FC<LandingViewProps> = ({
                             id={`landing-solve-the-case-btn-${caseItem.id}`}
                             type="button"
                             onClick={() => setLockedModalCase(caseItem)}
-                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 bg-neutral-800 hover:bg-neutral-700 text-amber-400 font-black px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-mono uppercase tracking-wider transition-all duration-200 cursor-pointer border border-amber-600/50 hover:border-amber-500 shadow-md touch-manipulation shrink-0"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 bg-neutral-900 hover:bg-neutral-800 text-amber-400 font-black px-6 sm:px-8 py-3 rounded-xl text-xs sm:text-sm font-mono uppercase tracking-wider transition-all duration-200 cursor-pointer border border-amber-600/50 hover:border-amber-500 shadow-md touch-manipulation min-h-[44px] active:scale-[0.98] shrink-0"
                           >
                             {isCase4 ? <Clock className="w-4 h-4 text-amber-400 animate-pulse" /> : <Lock className="w-4 h-4 text-amber-400" />}
                             <span>{isCase4 ? 'Locked • Case #4 Coming Soon' : 'Locked • Solve Case 2 First'}</span>
+                          </button>
+                        ) : progress.status === 'in_progress' ? (
+                          <button
+                            id={`landing-solve-the-case-btn-${caseItem.id}`}
+                            type="button"
+                            onClick={() => onSelectCase(caseItem)}
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 bg-red-600 hover:bg-red-500 text-white font-black px-6 sm:px-10 py-3 rounded-xl text-xs sm:text-base font-mono uppercase tracking-wider sm:tracking-widest transition-all duration-200 cursor-pointer shadow-lg shadow-red-950/50 border border-red-400 hover:scale-[1.02] active:scale-[0.98] touch-manipulation min-h-[44px] shrink-0"
+                          >
+                            <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0" />
+                            <span>Resume {caseItem.code}</span>
+                            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
+                          </button>
+                        ) : progress.status === 'solved' ? (
+                          <button
+                            id={`landing-solve-the-case-btn-${caseItem.id}`}
+                            type="button"
+                            onClick={() => onSelectCase(caseItem)}
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 bg-neutral-900 hover:bg-neutral-800 text-emerald-300 hover:text-white font-black px-6 sm:px-10 py-3 rounded-xl text-xs sm:text-base font-mono uppercase tracking-wider sm:tracking-widest transition-all duration-200 cursor-pointer border border-emerald-600/60 hover:border-emerald-500 shadow-lg touch-manipulation min-h-[44px] active:scale-[0.98] shrink-0"
+                          >
+                            <Check className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 shrink-0" />
+                            <span>Re-Examine {caseItem.code}</span>
+                            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 shrink-0" />
                           </button>
                         ) : (
                           <button
                             id={`landing-solve-the-case-btn-${caseItem.id}`}
                             type="button"
                             onClick={() => onSelectCase(caseItem)}
-                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 bg-red-600 hover:bg-red-500 text-white font-black px-6 sm:px-10 py-2.5 sm:py-3 rounded-xl text-xs sm:text-base font-mono uppercase tracking-wider sm:tracking-widest transition-all duration-200 cursor-pointer shadow-lg shadow-red-950/50 border border-red-400 hover:scale-[1.02] active:scale-[0.98] touch-manipulation shrink-0"
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 bg-red-600 hover:bg-red-500 text-white font-black px-6 sm:px-10 py-3 rounded-xl text-xs sm:text-base font-mono uppercase tracking-wider sm:tracking-widest transition-all duration-200 cursor-pointer shadow-lg shadow-red-950/50 border border-red-400 hover:scale-[1.02] active:scale-[0.98] touch-manipulation min-h-[44px] shrink-0"
                           >
-                            <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                            <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0" />
                             <span>Solve {caseItem.code}</span>
-                            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                            <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
                           </button>
                         )}
                       </div>
@@ -502,18 +647,18 @@ export const LandingView: React.FC<LandingViewProps> = ({
       <div className="w-full h-1.5 bg-red-600 shadow-sm shadow-red-600/50" />
 
       {/* Footer */}
-      <footer className="border-t border-neutral-800 bg-[#060608] py-6 px-4 text-center font-mono text-xs text-neutral-500">
+      <footer className="border-t border-neutral-800 bg-[#060608] py-6 px-4 text-center font-mono text-xs text-neutral-500 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <InvestignitoLogo size={18} />
             <span className="font-bold text-neutral-400">INVESTIGNITO - Weekly Case Puzzles</span>
           </div>
-          <div className="flex items-center gap-4 text-[11px] sm:text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px] sm:text-xs">
             {onAddToDevice && (
               <button
                 type="button"
                 onClick={onAddToDevice}
-                className="text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+                className="hidden sm:flex text-neutral-400 hover:text-white transition-colors cursor-pointer items-center gap-1.5"
               >
                 <Smartphone className="w-3.5 h-3.5 text-red-500" />
                 <span>Add to Device</span>
@@ -530,7 +675,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
               <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
               <span>Manage Subscription</span>
             </a>
-            <span>Confidential Detective Case Records • All Rights Reserved</span>
+            <span className="text-[10px] sm:text-xs">Confidential Detective Case Records • All Rights Reserved</span>
           </div>
         </div>
       </footer>

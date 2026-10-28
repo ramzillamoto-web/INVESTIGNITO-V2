@@ -36,10 +36,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleResetAndReload = () => {
     try {
-      localStorage.clear();
+      localStorage.removeItem('investignito_session_v1');
       sessionStorage.clear();
     } catch (e) {
-      console.warn('Storage clear error:', e);
+      console.warn('Session clear error:', e);
     }
     window.location.reload();
   };
