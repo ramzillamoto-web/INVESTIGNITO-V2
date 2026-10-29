@@ -1,6 +1,17 @@
 <!doctype html>
 <html lang="en" style="background-color: #060608; color: #f5f5f5;">
   <head>
+<script>
+(function () {
+  try {
+    var isLiveSite = location.hostname === 'investignito-v2.netlify.app';
+    var isEmbedded = window.self !== window.top;
+    if (isLiveSite && !isEmbedded) {
+      location.replace('https://corexbooks.com/pages/investignito');
+    }
+  } catch (e) {}
+})();
+</script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>INVESTIGNITO - Weekly Case Puzzles</title>
