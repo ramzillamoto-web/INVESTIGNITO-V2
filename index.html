@@ -3,21 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script>
-      // Send anyone who opens the game directly (outside the Shopify page) to the Shopify gate.
-      // Runs only on the live netlify.app address, never inside the Shopify iframe,
-      // and never on Netlify preview/branch links (they contain "--").
-      (function () {
-        try {
-          var host = location.hostname.toLowerCase();
-          var isLiveNetlify = /\.netlify\.app$/.test(host) && host.indexOf('--') === -1;
-          var isTopLevel = window.self === window.top;
-          if (isLiveNetlify && isTopLevel) {
-            location.replace('https://corexbooks.com/pages/investignito');
-          }
-        } catch (e) {}
-      })();
-    </script>
     <title>INVESTIGNITO - Weekly Case Puzzles</title>
     <meta name="description" content="INVESTIGNITO - Weekly Case Puzzles: Step into unsolved master investigations, inspect sequential clues, and isolate the perpetrator." />
     <meta property="og:title" content="INVESTIGNITO - Weekly Case Puzzles" />
@@ -73,3 +58,4 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+

@@ -69,9 +69,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           {currentView === 'case_detail' && (
             <button
               onClick={() => onNavigate('how_to_play')}
-              className="ml-1 sm:ml-2 flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-300 hover:text-white text-[10px] sm:text-xs font-mono font-bold uppercase transition-colors shrink-0"
+              className="ml-1 sm:ml-2 flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg sm:rounded bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-300 hover:text-white text-[10px] sm:text-xs font-mono font-bold uppercase transition-colors shrink-0 min-h-[44px] sm:min-h-0 cursor-pointer"
+              title="Return to Case Files overview"
+              aria-label="All Cases"
             >
-              <ChevronLeft className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <ChevronLeft className="w-3.5 h-3.5" />
               <span className="hidden xs:inline sm:inline">All Cases</span>
             </button>
           )}
@@ -91,15 +93,15 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right: Controls */}
         {currentView === 'case_detail' ? (
-          /* Case Detail View Right Header - 100% unchanged */
+          /* Case Detail View Right Header - mobile decluttered */
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {caseProgress && (
               <div className="flex items-center gap-1.5 sm:gap-2">
-                {/* Status Badge */}
+                {/* Status Badge - hidden on mobile, shown on desktop */}
                 {caseProgress.status === 'in_progress' && (
                   <span
                     id="nav-status-in-progress"
-                    className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider sm:tracking-widest bg-red-600 text-white animate-pulse"
+                    className="hidden sm:inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider sm:tracking-widest bg-red-600 text-white animate-pulse"
                   >
                     <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white"></span>
                     <span className="hidden xs:inline">IN PROGRESS</span>
@@ -109,25 +111,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {caseProgress.status === 'solved' && (
                   <span
                     id="nav-status-solved"
-                    className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider sm:tracking-widest bg-emerald-600 text-white"
+                    className="hidden sm:inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider sm:tracking-widest bg-emerald-600 text-white"
                   >
                     <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white"></span>
                     SOLVED
                   </span>
                 )}
                 {caseProgress.status === 'unsolved' && (
-                  <span className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider px-2 sm:px-2.5 py-0.5 sm:py-1 text-neutral-400 bg-neutral-900 border border-neutral-800 rounded">
+                  <span className="hidden sm:inline-flex text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider px-2 sm:px-2.5 py-0.5 sm:py-1 text-neutral-400 bg-neutral-900 border border-neutral-800 rounded">
                     UNSOLVED
                   </span>
                 )}
 
-                {/* Live Top-Right Timer */}
+                {/* Live Top-Right Timer - single timer on mobile */}
                 <div
                   id="top-right-case-timer"
-                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-neutral-900 border border-neutral-700 text-[#f5f5f5] font-mono text-[11px] sm:text-xs font-black shadow-inner"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1 rounded-lg sm:rounded bg-neutral-900 border border-neutral-700 text-[#f5f5f5] font-mono text-[11px] sm:text-xs font-black shadow-inner min-h-[44px] sm:min-h-0"
                   title="Investigation Stopwatch"
                 >
-                  <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500" />
+                  <Clock className="w-3.5 h-3.5 text-red-500 shrink-0" />
                   <span className="tracking-wider sm:tracking-widest">
                     {formatTime(
                       caseProgress.status === 'solved' && caseProgress.solveTimeSeconds !== null
@@ -139,11 +141,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
+            {/* Add to Device - hidden on mobile (only shown on desktop if present) */}
             {onAddToDevice && (
               <button
                 id="nav-add-to-device-btn"
                 onClick={onAddToDevice}
-                className={`flex items-center gap-1.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider px-2 sm:px-2.5 py-1 sm:py-1.5 rounded transition-all cursor-pointer ${
+                className={`hidden sm:flex items-center gap-1.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider px-2 sm:px-2.5 py-1 sm:py-1.5 rounded transition-all cursor-pointer ${
                   isStandalone
                     ? 'bg-neutral-900 border border-neutral-700 text-emerald-400 hover:border-emerald-500'
                     : 'bg-red-950/40 border border-red-600/70 hover:border-red-400 text-red-200 hover:text-white shadow-sm hover:bg-red-900/50'
@@ -154,39 +157,40 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {isStandalone ? (
                   <>
                     <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400" />
-                    <span className="hidden sm:inline">On Device</span>
+                    <span>On Device</span>
                   </>
                 ) : (
                   <>
                     <Smartphone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400 shrink-0" />
-                    <span className="hidden xs:inline">Add to Device</span>
-                    <span className="xs:hidden">Add</span>
+                    <span>Add to Device</span>
                   </>
                 )}
               </button>
             )}
 
+            {/* Manage Subscription - hidden on mobile, shown on desktop */}
             <a
               id="nav-subscription-link"
               href="https://account.trycorex.store/"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-emerald-300 hover:text-emerald-100 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded bg-emerald-950/60 border border-emerald-500/70 hover:border-emerald-400 hover:bg-emerald-900/70 transition-all cursor-pointer shadow-sm shadow-emerald-950/50 shrink-0"
+              className="hidden sm:flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-emerald-300 hover:text-emerald-100 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded bg-emerald-950/60 border border-emerald-500/70 hover:border-emerald-400 hover:bg-emerald-900/70 transition-all cursor-pointer shadow-sm shadow-emerald-950/50 shrink-0"
               title="Manage Detective Subscription"
               aria-label="Manage Subscription"
             >
               <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" />
-              <span className="hidden sm:inline">Manage Subscription</span>
-              <span className="sm:hidden">Manage Sub</span>
+              <span>Manage Subscription</span>
             </a>
 
+            {/* Field Rules / Help - 44px tap target icon on mobile, labeled on desktop */}
             <button
               onClick={() => onOpenHelp()}
-              className="flex items-center gap-1 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-neutral-300 hover:text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 transition-colors cursor-pointer"
+              className="flex items-center justify-center gap-1 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-neutral-300 hover:text-white min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:px-3 sm:py-1.5 rounded-lg sm:rounded bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 transition-colors cursor-pointer shrink-0"
+              title="Field Rules / How to Play"
+              aria-label="Field Rules"
             >
-              <HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neutral-400" />
+              <HelpCircle className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-neutral-400 shrink-0" />
               <span className="hidden sm:inline">Field Rules</span>
-              <span className="sm:hidden">Rules</span>
             </button>
 
             {/* Fullscreen Button */}

@@ -549,19 +549,19 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-2.5 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 bg-[#0a0a0a] text-[#f5f5f5]">
       {/* 1. Case Premise & Atmosphere Banner */}
-      <div className="bg-neutral-900 border-2 border-neutral-800 rounded-xl p-4 sm:p-6 lg:p-8 relative overflow-hidden shadow-2xl">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 sm:gap-6">
-          <div className="space-y-2 sm:space-y-3 flex-1">
-            {/* Top metadata tags */}
+      <div className="bg-neutral-900 border-2 border-neutral-800 rounded-xl p-3.5 sm:p-6 lg:p-8 relative overflow-hidden shadow-2xl">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3.5 sm:gap-6">
+          <div className="space-y-1.5 sm:space-y-3 flex-1 min-w-0">
+            {/* Top metadata tags: on mobile, show only CASE N chip and status chip */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
-              <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider sm:tracking-widest bg-red-600 text-white">
+              <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider sm:tracking-widest bg-red-600 text-white shrink-0">
                 {caseItem.code}
               </span>
-              <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-bold uppercase text-neutral-300 bg-neutral-800 border border-neutral-700">
+              <span className="hidden sm:inline-flex px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-bold uppercase text-neutral-300 bg-neutral-800 border border-neutral-700">
                 {caseItem.totalPages} PAGES • {caseItem.suspects.length} SUSPECTS
               </span>
               {caseItem.id === 'case-1' && (
-                <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-bold uppercase text-neutral-300 bg-neutral-800 border border-neutral-700">
+                <span className="hidden sm:inline-flex px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-bold uppercase text-neutral-300 bg-neutral-800 border border-neutral-700">
                   {caseItem.difficulty.toUpperCase()}
                 </span>
               )}
@@ -598,14 +598,18 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
             <h1 className="text-xl sm:text-3xl lg:text-5xl font-black font-display uppercase tracking-tight text-white leading-tight">
               {caseItem.title}
             </h1>
-            <p className="text-xs sm:text-sm font-bold text-red-500 uppercase tracking-wide">
+            <p className="text-xs sm:text-sm font-bold text-red-500 uppercase tracking-wide line-clamp-2 sm:line-clamp-none">
               {caseItem.tagline}
             </p>
+            {/* Single small monospace line on mobile replacing separate page/suspect & difficulty chips */}
+            <div className="sm:hidden text-[11px] font-mono text-neutral-400 tracking-tight">
+              {caseItem.totalPages} pages • {caseItem.suspects.length} suspects{caseItem.difficulty ? ` • ${caseItem.difficulty}` : ''}
+            </div>
           </div>
 
-          {/* Quick controls: Restart Button, Stopwatch, Help */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full lg:w-auto">
-            {/* Restart Case Button (swapped to toolbar position where Begin was) */}
+          {/* Quick controls toolbar: on mobile, one single row of 3 equal-width 44px buttons */}
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2 sm:gap-3 w-full lg:w-auto">
+            {/* Restart Case Button */}
             <button
               id="btn-restart-case"
               type="button"
@@ -614,17 +618,18 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 e.stopPropagation();
                 setShowRestartModal(true);
               }}
-              className="flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider bg-neutral-800 hover:bg-neutral-700 text-amber-400 hover:text-amber-300 border border-amber-500/50 hover:border-amber-400 shadow-sm transition-all cursor-pointer select-none touch-manipulation active:scale-[0.98] shrink-0"
+              className="flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider bg-neutral-800 hover:bg-neutral-700 text-amber-400 hover:text-amber-300 border border-amber-500/50 hover:border-amber-400 shadow-sm transition-all cursor-pointer select-none touch-manipulation active:scale-[0.98] min-h-[44px] h-[44px] sm:h-auto sm:min-h-0"
               title="Restart case from the beginning (with warning confirmation)"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-amber-400 stroke-[2.5]" />
-              <span className="whitespace-nowrap">Restart Case</span>
+              <RotateCcw className="w-3.5 h-3.5 text-amber-400 stroke-[2.5] shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap">Restart Case</span>
+              <span className="sm:hidden whitespace-nowrap">Restart</span>
             </button>
 
-            {/* Stopwatch Widget */}
+            {/* Stopwatch Widget - Hidden on mobile (timer lives in top bar), shown on desktop */}
             <div
               id="case-main-timer-widget"
-              className="flex items-center gap-2 px-2.5 sm:px-4 py-1.5 sm:py-3 rounded-lg bg-[#0a0a0a] border border-neutral-700 font-mono shadow-inner shrink-0"
+              className="hidden sm:flex items-center gap-2 px-2.5 sm:px-4 py-1.5 sm:py-3 rounded-lg bg-[#0a0a0a] border border-neutral-700 font-mono shadow-inner shrink-0"
             >
               <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 shrink-0" />
               <div>
@@ -649,7 +654,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 e.preventDefault();
                 setShowDetails(!showDetails);
               }}
-              className={`flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-3 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer select-none touch-manipulation active:scale-[0.98] flex-1 sm:flex-initial ${
+              className={`flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer select-none touch-manipulation active:scale-[0.98] min-h-[44px] h-[44px] sm:h-auto sm:min-h-0 ${
                 showDetails
                   ? 'bg-neutral-800 border-red-500 text-red-400 shadow-md ring-1 ring-red-500/50'
                   : 'bg-neutral-800 border-neutral-700 text-neutral-200 hover:bg-neutral-700 hover:text-white hover:border-neutral-500'
@@ -658,7 +663,8 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               aria-expanded={showDetails}
             >
               <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400 shrink-0" />
-              <span>{showDetails ? 'Hide Details' : 'Details'}</span>
+              <span className="hidden sm:inline">{showDetails ? 'Hide Details' : 'Details'}</span>
+              <span className="sm:hidden">{showDetails ? 'Hide' : 'Details'}</span>
               {showDetails ? (
                 <ChevronUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
               ) : (
@@ -674,7 +680,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 e.preventDefault();
                 setShowNotes(!showNotes);
               }}
-              className={`flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-3 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer select-none touch-manipulation active:scale-[0.98] flex-1 sm:flex-initial ${
+              className={`flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider border transition-all cursor-pointer select-none touch-manipulation active:scale-[0.98] min-h-[44px] h-[44px] sm:h-auto sm:min-h-0 ${
                 showNotes
                   ? 'bg-neutral-800 border-red-500 text-red-400 shadow-md ring-1 ring-red-500/50'
                   : 'bg-neutral-800 border-neutral-700 text-neutral-300 hover:bg-neutral-700 hover:text-white hover:border-neutral-500'
@@ -683,7 +689,8 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               aria-expanded={showNotes}
             >
               <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400 shrink-0" />
-              <span>{showNotes ? 'Hide Notes' : 'Notes'}</span>
+              <span className="hidden sm:inline">{showNotes ? 'Hide Notes' : 'Notes'}</span>
+              <span className="sm:hidden">{showNotes ? 'Hide' : 'Notes'}</span>
               {showNotes ? (
                 <ChevronUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
               ) : (
@@ -696,7 +703,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
         {/* Prominent Centered BEGIN Button (Magnetic Pulling Idle + 3..2..1.. START! Countdown) */}
         {progress.status === 'unsolved' && (
           <div
-            className={`w-full flex flex-col items-center justify-center pt-5 sm:pt-6 mt-4 sm:mt-6 border-t border-neutral-800/80 text-center relative ${
+            className={`w-full flex flex-col items-center justify-center pt-3.5 sm:pt-6 mt-3 sm:mt-6 border-t border-neutral-800/80 text-center relative ${
               countdownStep === 'START!' ? 'animate-impact-shudder' : 'animate-fade-in'
             }`}
           >
@@ -705,12 +712,12 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               <div className="fixed inset-0 pointer-events-none z-50 bg-red-600/25 animate-begin-flash backdrop-blur-[0.5px]" />
             )}
 
-            <div className="relative inline-flex items-center justify-center my-2">
-              {/* Magnetic Pulling Idle Rings (gravitational pull effect when idle) */}
+            <div className="relative inline-flex items-center justify-center my-1.5 sm:my-2">
+              {/* Magnetic Pulling Idle Rings (gravitational pull effect when idle - reduced halo on mobile) */}
               {!isBeginningSequence && (
                 <>
-                  <div className="absolute inset-0 -m-3 sm:-m-4 rounded-3xl border border-red-500/40 animate-pull-ring-idle pointer-events-none" />
-                  <div className="absolute inset-0 -m-6 sm:-m-8 rounded-3xl border border-red-400/20 animate-pull-ring-idle [animation-delay:1.1s] pointer-events-none" />
+                  <div className="absolute inset-0 -m-1.5 sm:-m-4 rounded-2xl sm:rounded-3xl border border-red-500/25 sm:border-red-500/40 animate-pull-ring-idle pointer-events-none" />
+                  <div className="hidden sm:block absolute inset-0 -m-6 sm:-m-8 rounded-3xl border border-red-400/20 animate-pull-ring-idle [animation-delay:1.1s] pointer-events-none" />
                 </>
               )}
 
@@ -735,12 +742,12 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 type="button"
                 onClick={handleBeginCase}
                 disabled={isBeginningSequence}
-                className={`relative overflow-hidden flex items-center justify-center gap-3 sm:gap-4 font-black px-8 sm:px-16 py-3.5 sm:py-5 rounded-2xl text-base sm:text-xl uppercase tracking-widest transition-all duration-200 cursor-pointer touch-manipulation group border-2 min-w-[240px] sm:min-w-[320px] ${
+                className={`relative overflow-hidden flex items-center justify-center gap-2.5 sm:gap-4 font-black px-6 sm:px-16 py-3 sm:py-5 min-h-[44px] rounded-xl sm:rounded-2xl text-base sm:text-xl uppercase tracking-widest transition-all duration-200 cursor-pointer touch-manipulation group border-2 min-w-[200px] sm:min-w-[320px] ${
                   countdownStep === 'START!'
-                    ? 'animate-begin-recoil bg-gradient-to-r from-red-600 via-amber-500 to-red-600 text-white border-amber-300 ring-8 ring-red-500 shadow-2xl shadow-red-500'
+                    ? 'animate-begin-recoil bg-gradient-to-r from-red-600 via-amber-500 to-red-600 text-white border-amber-300 ring-4 sm:ring-8 ring-red-500 shadow-2xl shadow-red-500'
                     : isBeginningSequence
-                    ? 'bg-neutral-900/90 text-white border-red-500 ring-4 ring-red-600/70 shadow-2xl shadow-red-950'
-                    : 'animate-begin-pull bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:to-red-500 text-white border-red-300 ring-4 ring-red-600/60 hover:ring-red-400 shadow-2xl shadow-red-600/60 active:scale-95'
+                    ? 'bg-neutral-900/90 text-white border-red-500 ring-2 sm:ring-4 ring-red-600/70 shadow-2xl shadow-red-950'
+                    : 'animate-begin-pull bg-gradient-to-r from-red-600 via-red-500 to-red-600 hover:from-red-500 hover:to-red-500 text-white border-red-300 ring-2 sm:ring-4 ring-red-600/60 hover:ring-red-400 shadow-xl sm:shadow-2xl shadow-red-600/60 active:scale-95'
                 }`}
                 title="Begin the case and start the investigation stopwatch"
               >
@@ -751,24 +758,24 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                   <div className="flex items-center justify-center gap-3 sm:gap-4 w-full">
                     {countdownStep === 'START!' ? (
                       <div key="step-start" className="flex items-center gap-2.5 sm:gap-3 animate-countdown-pop">
-                        <Zap className="w-7 h-7 sm:w-9 sm:h-9 text-amber-200 animate-bounce shrink-0 fill-current" />
-                        <span className="font-display font-black tracking-[0.25em] text-2xl sm:text-4xl text-white drop-shadow-[0_2px_12px_rgba(255,255,255,0.7)]">
+                        <Zap className="w-6 h-6 sm:w-9 sm:h-9 text-amber-200 animate-bounce shrink-0 fill-current" />
+                        <span className="font-display font-black tracking-[0.2em] sm:tracking-[0.25em] text-xl sm:text-4xl text-white drop-shadow-[0_2px_12px_rgba(255,255,255,0.7)]">
                           START!
                         </span>
-                        <Unlock className="w-6 h-6 sm:w-8 sm:h-8 text-white animate-pulse shrink-0" />
+                        <Unlock className="w-5 h-5 sm:w-8 sm:h-8 text-white animate-pulse shrink-0" />
                       </div>
                     ) : (
-                      <div key={`step-${countdownStep}`} className="flex items-center gap-3 sm:gap-4 animate-countdown-pop">
-                        <span className="text-xs sm:text-sm font-mono tracking-widest text-red-400 font-bold uppercase">
+                      <div key={`step-${countdownStep}`} className="flex items-center gap-2.5 sm:gap-4 animate-countdown-pop">
+                        <span className="text-[10px] sm:text-sm font-mono tracking-widest text-red-400 font-bold uppercase">
                           UNSEALING IN
                         </span>
-                        <span className="font-display font-black text-3xl sm:text-5xl text-amber-400 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)] px-2">
+                        <span className="font-display font-black text-2xl sm:text-5xl text-amber-400 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)] px-1 sm:px-2">
                           {countdownStep}
                         </span>
                         <div className="flex gap-1.5">
-                          <span className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${countdownStep === '3' || countdownStep === '2' || countdownStep === '1' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)]' : 'bg-neutral-700'}`} />
-                          <span className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${countdownStep === '2' || countdownStep === '1' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.9)]' : 'bg-neutral-700'}`} />
-                          <span className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${countdownStep === '1' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]' : 'bg-neutral-700'}`} />
+                          <span className={`w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full transition-all duration-200 ${countdownStep === '3' || countdownStep === '2' || countdownStep === '1' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)]' : 'bg-neutral-700'}`} />
+                          <span className={`w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full transition-all duration-200 ${countdownStep === '2' || countdownStep === '1' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.9)]' : 'bg-neutral-700'}`} />
+                          <span className={`w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full transition-all duration-200 ${countdownStep === '1' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]' : 'bg-neutral-700'}`} />
                         </div>
                       </div>
                     )}
@@ -776,7 +783,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 ) : (
                   <>
                     <Play className="w-5 h-5 sm:w-7 sm:h-7 fill-current stroke-none text-white group-hover:scale-110 group-hover:translate-x-0.5 transition-transform shrink-0" />
-                    <span className="font-display font-black tracking-[0.25em] text-lg sm:text-2xl text-white drop-shadow-md">
+                    <span className="font-display font-black tracking-[0.2em] sm:tracking-[0.25em] text-base sm:text-2xl text-white drop-shadow-md">
                       BEGIN
                     </span>
                     <span className="hidden sm:inline-flex items-center text-[10px] uppercase font-mono tracking-widest bg-black/40 text-red-100 px-2 py-0.5 rounded border border-red-300/40">
@@ -787,12 +794,20 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               </button>
             </div>
 
-            <p className="text-[11px] sm:text-xs text-neutral-400 font-mono mt-3 tracking-wide flex items-center justify-center gap-1.5">
-              <span className={`inline-block w-1.5 h-1.5 rounded-full ${isBeginningSequence ? 'bg-amber-400 animate-ping' : 'bg-red-500 animate-ping'}`} />
+            <p className="text-[11px] sm:text-xs text-neutral-400 font-mono mt-2 sm:mt-3 tracking-wide flex items-center justify-center gap-1.5 px-2 text-center">
+              <span className={`inline-block w-1.5 h-1.5 rounded-full ${isBeginningSequence ? 'bg-amber-400 animate-ping' : 'bg-red-500 animate-ping'} shrink-0`} />
               <span>
-                {isBeginningSequence
-                  ? 'Stand by: Unsealing suspect registry and clue timeline...'
-                  : 'Click to unseal case evidence and start the investigation timer'}
+                {isBeginningSequence ? (
+                  <>
+                    <span className="sm:hidden">Unsealing evidence...</span>
+                    <span className="hidden sm:inline">Stand by: Unsealing suspect registry and clue timeline...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="sm:hidden">Tap to unseal evidence and start timer</span>
+                    <span className="hidden sm:inline">Click to unseal case evidence and start the investigation timer</span>
+                  </>
+                )}
               </span>
             </p>
           </div>
