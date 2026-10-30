@@ -194,6 +194,7 @@ export default function App() {
 
         {currentView === 'case_detail' && (
           <CaseDetailView
+            key={selectedCase.id}
             caseItem={selectedCase}
             progress={currentCaseProgress}
             isLocked={isCurrentCaseLocked}
@@ -203,8 +204,12 @@ export default function App() {
             onOpenHelp={() => setShowHelpModal(true)}
             onResetCase={handleResetCase}
             onSwitchToCase={(caseId) => {
-              setSelectedCaseId(caseId);
-              setCurrentView('case_detail');
+              if (caseId === 'how_to_play') {
+                setCurrentView('how_to_play');
+              } else {
+                setSelectedCaseId(caseId);
+                setCurrentView('case_detail');
+              }
             }}
           />
         )}

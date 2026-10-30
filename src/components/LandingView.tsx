@@ -619,22 +619,23 @@ export const LandingView: React.FC<LandingViewProps> = ({
               <button
                 type="button"
                 onClick={() => setLockedModalCase(null)}
-                className={`py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-mono font-bold text-xs uppercase tracking-wider transition-colors border border-neutral-700 cursor-pointer ${lockedModalCase.id === 'case-4' && allProgress['case-3']?.status === 'solved' ? 'w-full' : 'w-full sm:w-1/2'}`}
+                className={`py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-mono font-bold text-xs uppercase tracking-wider transition-colors border border-neutral-700 cursor-pointer ${
+                  lockedModalCase.id === 'case-4' ? 'w-full' : 'w-full sm:w-1/2'
+                }`}
               >
-                {lockedModalCase.id === 'case-4' && allProgress['case-3']?.status === 'solved' ? 'Understood' : 'Close'}
+                {lockedModalCase.id === 'case-4' ? 'Understood' : 'Close'}
               </button>
-              {!(lockedModalCase.id === 'case-4' && allProgress['case-3']?.status === 'solved') && (
+              {lockedModalCase.id !== 'case-4' && (
                 <button
                   type="button"
                   onClick={() => {
-                    const targetCaseId = lockedModalCase.id === 'case-4' ? 'case-3' : 'case-2';
                     setLockedModalCase(null);
-                    const targetCase = cases.find((c) => c.id === targetCaseId) || cases[0];
+                    const targetCase = cases.find((c) => c.id === 'case-2') || cases[0];
                     if (targetCase) onSelectCase(targetCase);
                   }}
                   className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono font-black text-xs uppercase tracking-wider transition-colors shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <span>{lockedModalCase.id === 'case-4' ? 'Play Case 3' : 'Play Case 2'}</span>
+                  <span>Play Case 2</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               )}

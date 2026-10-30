@@ -102,51 +102,6 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
     }));
   };
 
-  // If case is locked, show restricted clearance screen
-  if (isLocked) {
-    const isCase4Target = caseItem.id === 'case-4';
-    const reqCaseId = 'case-3';
-    const reqCaseTitle = 'Case 3: Jan Never Left the Station';
-
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-16 text-center space-y-6 animate-fade-in bg-[#0a0a0a] min-h-[70vh] flex flex-col items-center justify-center">
-        <div className="w-20 h-20 rounded-2xl bg-amber-950/80 border-2 border-amber-600 flex items-center justify-center text-amber-400 shadow-2xl mx-auto">
-          {isCase4Target ? <Clock className="w-10 h-10 animate-pulse" /> : <Lock className="w-10 h-10" />}
-        </div>
-        <div className="space-y-3">
-          <span className="px-3.5 py-1 rounded bg-amber-950/90 border border-amber-700 text-amber-300 font-mono text-xs font-black uppercase tracking-widest inline-block">
-            {isCase4Target ? 'CLASSIFIED DOSSIER • CASE #4 COMING SOON' : 'RESTRICTED ACCESS • LEVEL 3 CLEARANCE REQUIRED'}
-          </span>
-          <h1 className="text-3xl sm:text-4xl font-black font-display uppercase tracking-tight text-white">
-            {isCase4Target ? 'Case #4 Coming Soon' : `${caseItem.title} is Locked`}
-          </h1>
-          <p className="text-neutral-300 max-w-lg mx-auto text-sm sm:text-base leading-relaxed font-medium">
-            {isCase4Target ? (
-              <>
-                <strong>Case #4: The Pendulum Over Blackwood Spire</strong> will come soon! Our Scotland Yard archives and clockmaker guild registries are currently undergoing evidence sealing. Keep your instincts sharp—it will arrive in the next case release.
-              </>
-            ) : (
-              <>
-                Detective clearance for {caseItem.title} requires apprehending the culprit in <strong>{reqCaseTitle}</strong> first.
-              </>
-            )}
-          </p>
-        </div>
-        <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md">
-          {onSwitchToCase && (
-            <button
-              onClick={() => onSwitchToCase(isCase4Target ? 'case-3' : 'case-2')}
-              className="w-full py-3.5 px-6 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono font-black text-sm uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer shadow-red-950/50"
-            >
-              <span>{isCase4Target ? 'Return to Case 3' : 'Investigate Case 2'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   // Expandable sections state - single atomic activeSection ensures strict mutual collapse across all cases
   const [activeSection, setActiveSection] = useState<'clues' | 'ledger' | null>(null);
   const [isToolsExpanded, setIsToolsExpanded] = useState<boolean>(false);
@@ -545,6 +500,50 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
   const crossedTotal = Object.values(progress.markings || {}).filter((m) => m === 'cross').length;
   const circledTotal = Object.values(progress.markings || {}).filter((m) => m === 'circle').length;
   const remainingSurviving = caseItem.suspects.length - crossedTotal;
+
+  // If case is locked, show restricted clearance screen (unconditionally rendered after all hooks)
+  if (isLocked) {
+    const isCase4Target = caseItem.id === 'case-4';
+    const reqCaseTitle = isCase4Target ? 'Case 3: Jan Never Left the Station' : 'Case 2: The Solstice Masquerade';
+
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center space-y-6 animate-fade-in bg-[#0a0a0a] min-h-[70vh] flex flex-col items-center justify-center">
+        <div className="w-20 h-20 rounded-2xl bg-amber-950/80 border-2 border-amber-600 flex items-center justify-center text-amber-400 shadow-2xl mx-auto">
+          {isCase4Target ? <Clock className="w-10 h-10 animate-pulse" /> : <Lock className="w-10 h-10" />}
+        </div>
+        <div className="space-y-3">
+          <span className="px-3.5 py-1 rounded bg-amber-950/90 border border-amber-700 text-amber-300 font-mono text-xs font-black uppercase tracking-widest inline-block">
+            {isCase4Target ? 'CLASSIFIED DOSSIER • CASE #4 COMING SOON' : 'RESTRICTED ACCESS • LEVEL 3 CLEARANCE REQUIRED'}
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-black font-display uppercase tracking-tight text-white">
+            {isCase4Target ? 'Case #4 Coming Soon' : `${caseItem.title} is Locked`}
+          </h1>
+          <p className="text-neutral-300 max-w-lg mx-auto text-sm sm:text-base leading-relaxed font-medium">
+            {isCase4Target ? (
+              <>
+                <strong>Case #4: The Pendulum Over Blackwood Spire</strong> will come soon! Our Scotland Yard archives and clockmaker guild registries are currently undergoing evidence sealing. Keep your instincts sharp—it will arrive in the next case release.
+              </>
+            ) : (
+              <>
+                Detective clearance for {caseItem.title} requires apprehending the culprit in <strong>{reqCaseTitle}</strong> first.
+              </>
+            )}
+          </p>
+        </div>
+        <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md">
+          {onSwitchToCase && (
+            <button
+              onClick={() => onSwitchToCase(isCase4Target ? 'how_to_play' : 'case-2')}
+              className="w-full py-3.5 px-6 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono font-black text-sm uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer shadow-red-950/50"
+            >
+              <span>{isCase4Target ? 'Return to All Cases' : 'Investigate Case 2'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-2.5 sm:px-4 py-4 sm:py-8 space-y-4 sm:space-y-6 bg-[#0a0a0a] text-[#f5f5f5]">
