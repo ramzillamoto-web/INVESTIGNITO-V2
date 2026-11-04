@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, ChevronLeft, HelpCircle, Maximize2, Minimize2, CreditCard, Smartphone, Check } from 'lucide-react';
+import { Clock, ChevronLeft, HelpCircle, Maximize2, Minimize2, CreditCard, Smartphone, Check, FolderSync } from 'lucide-react';
 import { ViewMode, CaseData, CaseProgress } from '../types';
 import { formatTime } from '../utils/storage';
 import { InvestignitoLogo } from './InvestignitoLogo';
@@ -13,6 +13,7 @@ interface NavbarProps {
   onOpenHelp: () => void;
   onOpenSubscription?: () => void;
   onAddToDevice?: () => void;
+  onOpenSync?: () => void;
   isStandalone?: boolean;
 }
 
@@ -24,6 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenHelp,
   onOpenSubscription,
   onAddToDevice,
+  onOpenSync,
   isStandalone,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
@@ -182,6 +184,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Manage Subscription</span>
             </a>
 
+            {/* Desktop Sync / Backup Button */}
+            {onOpenSync && (
+              <button
+                type="button"
+                onClick={onOpenSync}
+                className="hidden sm:flex items-center gap-1 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-neutral-300 hover:text-white px-2 sm:px-2.5 py-1 sm:py-1.5 rounded bg-neutral-900 border border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800 transition-colors cursor-pointer"
+                title="Backup or transfer case progress to another device"
+                aria-label="Backup and Sync Progress"
+              >
+                <FolderSync className="w-3.5 h-3.5 text-red-400" />
+                <span className="hidden lg:inline">Sync / Backup</span>
+              </button>
+            )}
+
             {/* Field Rules / Help - 44px tap target icon on mobile, labeled on desktop */}
             <button
               onClick={() => onOpenHelp()}
@@ -229,6 +245,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               <CreditCard className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               <span>Manage Subscription</span>
             </a>
+
+            {/* Desktop Sync / Backup Button */}
+            {onOpenSync && (
+              <button
+                type="button"
+                onClick={onOpenSync}
+                className="hidden sm:flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-neutral-300 hover:text-white px-2.5 sm:px-3 py-1.5 rounded bg-neutral-900 border border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800 transition-colors cursor-pointer"
+                title="Backup or transfer case progress to another device"
+                aria-label="Backup and Sync Progress"
+              >
+                <FolderSync className="w-3.5 h-3.5 text-red-400" />
+                <span>Sync / Backup</span>
+              </button>
+            )}
 
             {/* Compact Help Icon Button on Mobile (at least 44x44px target) */}
             <button

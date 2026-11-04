@@ -17,6 +17,8 @@ import {
   CreditCard,
   Smartphone,
   Check,
+  FolderSync,
+  Sparkles,
 } from 'lucide-react';
 import { CaseData, CaseProgress } from '../types';
 import { formatTime } from '../utils/storage';
@@ -30,6 +32,7 @@ interface LandingViewProps {
   onDismissUnlockBanner?: () => void;
   onOpenSubscription?: () => void;
   onAddToDevice?: () => void;
+  onOpenSync?: () => void;
   isStandalone?: boolean;
 }
 
@@ -41,6 +44,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   onDismissUnlockBanner,
   onOpenSubscription,
   onAddToDevice,
+  onOpenSync,
   isStandalone,
 }) => {
   // Map of caseId -> boolean to track expanded "See Details" independently for each case
@@ -55,13 +59,14 @@ export const LandingView: React.FC<LandingViewProps> = ({
   };
 
   const isCase2Solved = allProgress['case-2']?.status === 'solved';
+  const isCase3Solved = allProgress['case-3']?.status === 'solved';
   const inProgressCase = cases.find((c) => allProgress[c.id]?.status === 'in_progress');
 
-  // Playable cases excluding coming soon
-  const COMING_SOON_CASE_IDS = ['case-4'];
+  // Playable cases
+  const COMING_SOON_CASE_IDS: string[] = [];
   const playableCases = cases.filter((c) => !COMING_SOON_CASE_IDS.includes(c.id));
   const playableCaseCount = playableCases.length;
-  const playableTotal = playableCaseCount || 3;
+  const playableTotal = playableCaseCount || 4;
   const solvedPlayableCount = playableCases.filter((c) => allProgress[c.id]?.status === 'solved').length;
   const playablePercent = playableTotal > 0 ? Math.round((solvedPlayableCount / playableTotal) * 100) : 0;
   const allPlayableSolved = solvedPlayableCount === playableTotal && playableTotal > 0;
@@ -234,7 +239,10 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   {playablePercent}%
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-1.5 w-full">
+              <div
+                className="grid gap-1.5 w-full"
+                style={{ gridTemplateColumns: `repeat(${playableTotal}, minmax(0, 1fr))` }}
+              >
                 {playableCases.map((caseItem) => {
                   const isSolved = allProgress[caseItem.id]?.status === 'solved';
                   const isInProgress = allProgress[caseItem.id]?.status === 'in_progress';
@@ -274,8 +282,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             const isCase3 = caseItem.id === 'case-3';
             const isCase4 = caseItem.id === 'case-4';
             const isCase3Solved = allProgress['case-3']?.status === 'solved';
-            // Case 4 is locked even if Case 3 is solved; players are told it will come soon
-            const isLocked = (isCase3 && !isCase2Solved) || isCase4;
+            const isLocked = (isCase3 && !isCase2Solved) || (isCase4 && !isCase3Solved);
             const sceneImage = caseItem.imageUrl || (isCase2 ? '/images/case-2-scene.jpg' : isCase3 ? '/images/case-3-scene.jpg' : '/images/case-1-scene.jpg');
 
             return (
@@ -285,9 +292,24 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 className={`relative bg-[#17171a] border-y-4 sm:border-2 sm:border-y-4 rounded-none sm:rounded-2xl overflow-hidden shadow-2xl transition-all duration-200 ${
                   isLocked
                     ? 'border-neutral-800 opacity-90 hover:border-neutral-700'
+                    : isCase4
+                    ? 'border-red-600 sm:border-neutral-800 sm:border-y-red-600 hover:border-neutral-700 shadow-[0_0_35px_rgba(220,38,38,0.35)] animate-border-aura-pulse motion-reduce:animate-none'
                     : 'border-red-600 sm:border-neutral-800 sm:border-y-red-600 hover:border-neutral-700'
                 }`}
               >
+                {/* Case 4 Animated Top & Bottom Laser Scanning Beams on Red Borders */}
+                {isCase4 && (
+                  <>
+                    {/* Top Animated Laser Beam on the top red border */}
+                    <div className="absolute top-0 left-0 right-0 h-[4px] bg-red-600 overflow-hidden z-20 pointer-events-none">
+                      <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_14px_rgba(255,255,255,0.95),0_0_24px_rgba(239,68,68,1)] animate-laser-scan-h motion-reduce:hidden" />
+                    </div>
+                    {/* Bottom Animated Laser Beam on the bottom red border */}
+                    <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-red-600 overflow-hidden z-20 pointer-events-none">
+                      <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_14px_rgba(255,255,255,0.95),0_0_24px_rgba(239,68,68,1)] animate-laser-scan-h-reverse motion-reduce:hidden" />
+                    </div>
+                  </>
+                )}
                 <div className="p-3.5 sm:p-6 lg:p-7">
                   {/* Strict Horizontal Flex Row Container on Desktop */}
                   <div className="flex flex-col md:flex-row md:items-stretch gap-4 sm:gap-5 lg:gap-7">
@@ -306,7 +328,9 @@ export const LandingView: React.FC<LandingViewProps> = ({
                                 ? 'bg-gradient-to-tr from-neutral-700/20 to-neutral-900/40'
                                 : 'bg-gradient-to-tr from-emerald-600/30 to-red-600/30'
                               : isCase4
-                              ? 'bg-gradient-to-tr from-amber-600/20 to-neutral-900/40'
+                              ? isLocked
+                                ? 'bg-gradient-to-tr from-neutral-700/20 to-neutral-900/40'
+                                : 'bg-gradient-to-tr from-amber-600/30 to-red-600/30'
                               : 'bg-gradient-to-tr from-red-600/40 to-red-900/40'
                           }`}
                         />
@@ -314,12 +338,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                         {/* Top Crime Scene Header Overlay Chips */}
                         <div className="absolute top-2 left-2 right-2 sm:top-2.5 sm:left-2.5 sm:right-2.5 z-20 flex items-center justify-between pointer-events-none">
                           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/85 backdrop-blur-md border border-neutral-800 text-[10px] font-mono font-black uppercase text-neutral-200">
-                            {isCase4 ? (
-                              <>
-                                <Clock className="w-3 h-3 text-amber-500 animate-pulse" />
-                                <span>COMING SOON • {caseItem.code.toUpperCase()}</span>
-                              </>
-                            ) : isLocked ? (
+                            {isLocked ? (
                               <>
                                 <Lock className="w-3 h-3 text-amber-500" />
                                 <span>RESTRICTED • {caseItem.code.toUpperCase()}</span>
@@ -342,9 +361,17 @@ export const LandingView: React.FC<LandingViewProps> = ({
                               </>
                             )}
                           </div>
-                          <span className="px-2 py-0.5 rounded bg-black/85 backdrop-blur-md border border-neutral-800 text-[9px] font-mono text-neutral-400">
-                            {isCase4 ? 'COMING SOON' : isLocked ? 'CLASSIFIED' : 'FORENSIC PHOTO'}
-                          </span>
+                          <div className="flex items-center gap-1.5 pointer-events-none">
+                            {isCase4 && !isLocked && progress.status !== 'solved' && (
+                              <span className="px-2 py-0.5 rounded bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white font-mono font-black text-[9px] uppercase tracking-wider shadow-md animate-pulse motion-reduce:animate-none flex items-center gap-1">
+                                <Sparkles className="w-2.5 h-2.5 text-amber-200" />
+                                <span>NEW</span>
+                              </span>
+                            )}
+                            <span className="px-2 py-0.5 rounded bg-black/85 backdrop-blur-md border border-neutral-800 text-[9px] font-mono text-neutral-400">
+                              {isLocked ? 'CLASSIFIED' : 'FORENSIC PHOTO'}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Forensic Corner Target Brackets */}
@@ -371,10 +398,10 @@ export const LandingView: React.FC<LandingViewProps> = ({
                           {isLocked && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-[2px] text-center pointer-events-none">
                               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-neutral-900/90 border border-amber-500/60 flex items-center justify-center text-amber-400 mb-1.5 sm:mb-2 shadow-lg">
-                                {isCase4 ? <Clock className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" /> : <Lock className="w-5 h-5 sm:w-6 sm:h-6" />}
+                                <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
                               </div>
                               <span className="text-[9px] sm:text-[10px] font-mono font-black uppercase tracking-widest text-amber-300 bg-black/80 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded border border-neutral-800">
-                                {isCase4 ? 'COMING SOON!' : 'COMPLETE CASE 2'}
+                                {isCase4 ? 'COMPLETE CASE 3' : 'COMPLETE CASE 2'}
                               </span>
                             </div>
                           )}
@@ -405,13 +432,19 @@ export const LandingView: React.FC<LandingViewProps> = ({
                             <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider bg-red-600 text-white shadow-md">
                               {caseItem.code.toUpperCase()} CASE FILE
                             </span>
+                            {isCase4 && !isLocked && (
+                              <span className="relative inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white shadow-lg shadow-red-950/80 border border-red-400/80 animate-pulse motion-reduce:animate-none">
+                                <Sparkles className="w-3 h-3 text-amber-300 animate-spin motion-reduce:hidden" />
+                                <span>NEW CASE</span>
+                              </span>
+                            )}
                             <span className="hidden xs:inline-block px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-bold text-neutral-300 bg-neutral-900 border border-neutral-800">
                               {caseItem.totalPages} PAGES
                             </span>
                             {isLocked ? (
                               <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-widest text-amber-400 px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-amber-950/80 border border-amber-800/80 flex items-center gap-1">
                                 <Lock className="w-3 h-3 text-amber-400" />
-                                {isCase4 ? 'LOCKED (COMING SOON)' : 'LOCKED (SOLVE CASE 2)'}
+                                {isCase4 ? 'LOCKED (SOLVE CASE 3)' : 'LOCKED (SOLVE CASE 2)'}
                               </span>
                             ) : progress.status === 'in_progress' ? (
                               <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-red-600 animate-pulse flex items-center gap-1">
@@ -541,8 +574,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                             onClick={() => setLockedModalCase(caseItem)}
                             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 bg-neutral-900 hover:bg-neutral-800 text-amber-400 font-black px-6 sm:px-8 py-3 rounded-xl text-xs sm:text-sm font-mono uppercase tracking-wider transition-all duration-200 cursor-pointer border border-amber-600/50 hover:border-amber-500 shadow-md touch-manipulation min-h-[44px] active:scale-[0.98] shrink-0"
                           >
-                            {isCase4 ? <Clock className="w-4 h-4 text-amber-400 animate-pulse" /> : <Lock className="w-4 h-4 text-amber-400" />}
-                            <span>{isCase4 ? 'Locked • Case #4 Coming Soon' : 'Locked • Solve Case 2 First'}</span>
+                            <Lock className="w-4 h-4 text-amber-400" />
+                            <span>{isCase4 ? 'Locked • Solve Case 3 First' : 'Locked • Solve Case 2 First'}</span>
                           </button>
                         ) : progress.status === 'in_progress' ? (
                           <button
@@ -571,9 +604,13 @@ export const LandingView: React.FC<LandingViewProps> = ({
                             id={`landing-solve-the-case-btn-${caseItem.id}`}
                             type="button"
                             onClick={() => onSelectCase(caseItem)}
-                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 bg-red-600 hover:bg-red-500 text-white font-black px-6 sm:px-10 py-3 rounded-xl text-xs sm:text-base font-mono uppercase tracking-wider sm:tracking-widest transition-all duration-200 cursor-pointer shadow-lg shadow-red-950/50 border border-red-400 hover:scale-[1.02] active:scale-[0.98] touch-manipulation min-h-[44px] shrink-0"
+                            className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 bg-red-600 hover:bg-red-500 text-white font-black px-6 sm:px-10 py-3 rounded-xl text-xs sm:text-base font-mono uppercase tracking-wider sm:tracking-widest transition-all duration-200 cursor-pointer shadow-lg shadow-red-950/50 border border-red-400 hover:scale-[1.02] active:scale-[0.98] touch-manipulation min-h-[44px] shrink-0 ${
+                              isCase4
+                                ? 'ring-2 ring-red-400/80 shadow-red-600/40 animate-[pulse_3s_ease-in-out_infinite] motion-reduce:animate-none'
+                                : ''
+                            }`}
                           >
-                            <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0" />
+                            <ShieldAlert className={`w-4 h-4 sm:w-5 sm:h-5 text-white shrink-0 ${isCase4 ? 'animate-bounce motion-reduce:animate-none' : ''}`} />
                             <span>Solve {caseItem.code}</span>
                             <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
                           </button>
@@ -594,19 +631,19 @@ export const LandingView: React.FC<LandingViewProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
           <div className="bg-neutral-900 border-2 border-amber-500/80 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-neutral-100">
             <div className="w-14 h-14 rounded-2xl bg-amber-950/80 border border-amber-600 flex items-center justify-center text-amber-400 mx-auto mb-4 shadow-xl">
-              {lockedModalCase.id === 'case-4' ? <Clock className="w-7 h-7 animate-pulse" /> : <Lock className="w-7 h-7" />}
+              <Lock className="w-7 h-7" />
             </div>
             <div className="text-center space-y-2 mb-6">
               <span className="text-[10px] font-mono font-black uppercase tracking-widest text-amber-400 block">
-                {lockedModalCase.id === 'case-4' ? 'CLASSIFIED DOSSIER • COMING SOON' : 'CLASSIFIED DOSSIER RESTRICTED'}
+                CLASSIFIED DOSSIER RESTRICTED
               </span>
               <h3 className="text-xl sm:text-2xl font-black font-display uppercase tracking-tight text-white">
-                {lockedModalCase.id === 'case-4' ? 'Case #4 Coming Soon' : `${lockedModalCase.title} is Locked`}
+                {lockedModalCase.title} is Locked
               </h3>
               <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
                 {lockedModalCase.id === 'case-4' ? (
                   <>
-                    <strong>Case #4: The Pendulum Over Blackwood Spire</strong> will come soon! Even if you have finished Case 3, our Scotland Yard archives and the Clockmakers Guild dossiers are currently undergoing evidence sealing. It will arrive in the upcoming case release!
+                    To access the Blackwood Spire clocktower vault and investigate Archibald’s sabotage in Case 4, you must first apprehend the culprit in <strong>Case 3: Jan Never Left the Station</strong>.
                   </>
                 ) : (
                   <>
@@ -619,26 +656,23 @@ export const LandingView: React.FC<LandingViewProps> = ({
               <button
                 type="button"
                 onClick={() => setLockedModalCase(null)}
-                className={`py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-mono font-bold text-xs uppercase tracking-wider transition-colors border border-neutral-700 cursor-pointer ${
-                  lockedModalCase.id === 'case-4' ? 'w-full' : 'w-full sm:w-1/2'
-                }`}
+                className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-mono font-bold text-xs uppercase tracking-wider transition-colors border border-neutral-700 cursor-pointer"
               >
-                {lockedModalCase.id === 'case-4' ? 'Understood' : 'Close'}
+                Close
               </button>
-              {lockedModalCase.id !== 'case-4' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLockedModalCase(null);
-                    const targetCase = cases.find((c) => c.id === 'case-2') || cases[0];
-                    if (targetCase) onSelectCase(targetCase);
-                  }}
-                  className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono font-black text-xs uppercase tracking-wider transition-colors shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <span>Play Case 2</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  const targetCaseId = lockedModalCase.id === 'case-4' ? 'case-3' : 'case-2';
+                  setLockedModalCase(null);
+                  const targetCase = cases.find((c) => c.id === targetCaseId) || cases[0];
+                  if (targetCase) onSelectCase(targetCase);
+                }}
+                className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono font-black text-xs uppercase tracking-wider transition-colors shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Play {lockedModalCase.id === 'case-4' ? 'Case 3' : 'Case 2'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -663,6 +697,17 @@ export const LandingView: React.FC<LandingViewProps> = ({
               >
                 <Smartphone className="w-3.5 h-3.5 text-red-500" />
                 <span>Add to Device</span>
+              </button>
+            )}
+            {onOpenSync && (
+              <button
+                type="button"
+                onClick={onOpenSync}
+                className="text-neutral-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+                title="Backup or transfer case progress to another device"
+              >
+                <FolderSync className="w-3.5 h-3.5 text-red-500" />
+                <span>Sync / Backup</span>
               </button>
             )}
             <a

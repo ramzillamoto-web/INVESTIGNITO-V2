@@ -1,7 +1,8 @@
 import { CaseData, EvidenceDossier, Clue, Suspect } from '../types';
 import case4Image from '../assets/images/case_4_scene_1789368236364.jpg';
+import { CASE_4_LEDGER_NAMES } from './case4Names';
 
-// Official Evidence Dossiers for Case 4 (Placeholder / Work in Progress)
+// Official Evidence Dossiers for Case 4
 export const CASE_4_DOSSIERS: EvidenceDossier[] = [
   {
     id: 'dossier-4-1',
@@ -46,10 +47,10 @@ export const CASE_4_DOSSIERS: EvidenceDossier[] = [
       'All four courtyard gates were locked at 11:30 PM. The suspect was among the registered guild members and guests listed in the official night ledger.',
     details: [
       'The courtyard gates showed no signs of forced entry; the perpetrator never scaled the perimeter iron spikes.',
-      'Exactly 300 names are recorded in the Blackwood Spire Guild Registry for the midnight gala.',
+      'Exactly 900 names are recorded in the Blackwood Spire Guild Registry for the midnight gala.',
       'Forensic chemical swabs on the gear lever reveal traces of volatile clockmaker cleaning spirit.'
     ],
-    keyObservation: 'The culprit is definitively recorded within the 6-page Blackwood Spire Guild Registry.',
+    keyObservation: 'The culprit is definitively recorded within the 15-page Blackwood Spire Guild Registry.',
     stamp: 'VERIFIED DISPATCH'
   },
   {
@@ -59,28 +60,27 @@ export const CASE_4_DOSSIERS: EvidenceDossier[] = [
     author: 'Commissioner Raymond Sterling',
     timestamp: '02:40 AM • Bureau Command',
     summary:
-      'Full case records and clockwork forensic reports have been cataloged. The 7 sequential clues isolate the saboteur from the 300 guild members.',
+      'Full case records and clockwork forensic reports have been cataloged. The 7 sequential clues isolate the saboteur from the 900 guild members.',
     details: [
       'Complete evidence dossier confirmed by Scotland Yard forensics.',
-      'Registry pages 1 through 6 encompass the full roster of clockmakers, apprentices, and benefactors.',
+      'Registry pages 1 through 15 encompass the full roster of clockmakers, apprentices, and benefactors.',
       'Case #4 interactive tooling and warrant filing are fully active.'
     ],
-    keyObservation: 'Follow the 7 sequential clues in exact order to eliminate innocent guild members and isolate the saboteur from the 300 registered clockmakers.',
+    keyObservation: 'Follow the 7 sequential clues in exact order to eliminate innocent guild members and isolate the saboteur from the 900 registered clockmakers.',
     stamp: 'SCOTLAND YARD SEALED'
   }
 ];
 
-// Sequential Clues for Case 4
+// Sequential Clues for Case 4 (all 7 clues use toolType 'X' and phase 'Phase 1: Elimination (Cross)', no targetYield)
 export const CASE_4_CLUES: Clue[] = [
   {
     id: 401,
     number: 1,
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
-    title: 'Clue #1: Heavy Escapement Cog Stature',
-    clueText:
-      'Forensic leverage measurements on the jammed gear prove: The saboteur’s name contains 6 or more letters. Cross out all names with 5 or fewer letters.',
-    logicRule: 'Name Length >= 6 (Cross if <= 5)',
+    title: 'Letter Check',
+    clueText: 'NAME CONTAINS AN "R"',
+    logicRule: 'Eliminate any name that does not contain the letter R',
     evidenceType: 'forensic'
   },
   {
@@ -88,10 +88,9 @@ export const CASE_4_CLUES: Clue[] = [
     number: 2,
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
-    title: 'Clue #2: Machine Grease Chemical Scrap',
-    clueText:
-      'A chemical swab of the clock oil reveals no trace of sulfur: The saboteur’s name contains NO letter "E" (case-insensitive). Cross out any name containing "E" or "e".',
-    logicRule: 'Name contains NO "E" / "e" (Cross if has E)',
+    title: 'No E',
+    clueText: 'NAME CONTAINS NO "E"',
+    logicRule: 'Eliminate any name that contains the letter E',
     evidenceType: 'physical'
   },
   {
@@ -99,10 +98,9 @@ export const CASE_4_CLUES: Clue[] = [
     number: 3,
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
-    title: 'Clue #3: Spire Catwalk Stride Monogram',
-    clueText:
-      'Chalk marks on the upper catwalk indicate: The perpetrator’s name begins with "K", "B", or "M". Cross out all names starting with any other letter.',
-    logicRule: 'Name starts with K, B, or M',
+    title: 'Double Letter',
+    clueText: 'NAME HAS A DOUBLE LETTER (SAME LETTER TWICE IN A ROW)',
+    logicRule: 'Eliminate any name without a double letter twice in a row',
     evidenceType: 'forensic'
   },
   {
@@ -110,10 +108,9 @@ export const CASE_4_CLUES: Clue[] = [
     number: 4,
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
-    title: 'Clue #4: East Spire Quadrant Registry',
-    clueText:
-      'The watchman confirmed the intruder fled down the East spiral staircase, restricted to EVEN-NUMBERED REGISTRY PAGES (2, 4, 6). Cross out odd-numbered pages.',
-    logicRule: 'Registry Page is EVEN (2, 4, 6)',
+    title: 'Column Rule',
+    clueText: 'NAME IS IN COLUMN 2 OR 3',
+    logicRule: 'Eliminate any name not positioned in Column 2 or Column 3',
     evidenceType: 'timeline'
   },
   {
@@ -121,139 +118,83 @@ export const CASE_4_CLUES: Clue[] = [
     number: 5,
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
-    title: 'Clue #5: Belltower Sounding Resonance',
-    clueText:
-      'The thirteenth chime echo analysis confirms: The culprit’s name ends in a CONSONANT. Cross out names ending in a vowel or Y.',
-    logicRule: 'Name ends with Consonant (Cross if vowel/Y)',
+    title: 'Row Rule',
+    clueText: 'ROW NUMBER = NUMBER OF LETTERS IN NAME',
+    logicRule: 'Eliminate any name where the row number does not equal the letter count',
     evidenceType: 'timeline'
   },
   {
     id: 406,
     number: 6,
-    phase: 'Phase 2: Selection / Shortlisting (Circle)',
-    toolType: 'Circle',
-    title: 'Clue #6: Archibald’s Engraved Pocket Watch',
-    clueText:
-      'Blackwood’s pocket timepiece had scratched initials inside the rear bezel: The saboteur is seated in Guild Wing #4 (PAGE 4). Circle candidates on Page 4.',
-    logicRule: 'Candidate located on Page 4 of Registry',
+    phase: 'Phase 1: Elimination (Cross)',
+    toolType: 'X',
+    title: 'Neighbour Rule',
+    clueText: 'THE NAME DIRECTLY ABOVE STARTS WITH THE SAME LETTER (ROW 1 = CROSS, CROSSED NAMES COUNT)',
+    logicRule: 'Eliminate any name unless the name directly above starts with the same letter (Row 1 eliminated)',
     evidenceType: 'physical'
   },
   {
     id: 407,
     number: 7,
-    phase: 'Phase 2: Selection / Shortlisting (Circle)',
-    toolType: 'Circle',
-    title: 'Clue #7: Official Scotland Yard Warrant',
-    clueText:
-      'Final Step: Submit the isolated culprit’s name and page number into the Official Warrant box to close the Case #4 investigation.',
-    logicRule: 'Warrant Submission: Culprit Name & Registry Page Match',
+    phase: 'Phase 1: Elimination (Cross)',
+    toolType: 'X',
+    title: 'Uniqueness Rule',
+    clueText: 'NAME APPEARS ONLY ONCE IN THE WHOLE LEDGER (ALL 15 PAGES, CROSSED NAMES INCLUDED)',
+    logicRule: 'Eliminate any name that appears more than once across the 15-page ledger',
     evidenceType: 'registry'
   }
 ];
 
-import { CASE_1_NAMES_POOL, CASE_2_NAMES_POOL } from './namesPool';
-
-// Generate 300 distinct suspects across 6 pages with airtight deductive funnel for Case 4
-function generateCase4Suspects(): Suspect[] {
-  const pool = Array.from(new Set([...CASE_1_NAMES_POOL, ...CASE_2_NAMES_POOL]))
-    .filter((n) => n !== 'Kallum' && n !== 'Marcus' && n !== 'Vincent' && n !== 'Otto');
-
-  const vowels = ['A', 'E', 'I', 'O', 'U', 'Y'];
-  const passesC1235 = (name: string) => {
-    if (name.length < 6) return false;
-    if (/e/i.test(name)) return false;
-    const first = name.charAt(0).toUpperCase();
-    if (!['K', 'B', 'M'].includes(first)) return false;
-    const last = name.charAt(name.length - 1).toUpperCase();
-    if (vowels.includes(last)) return false;
-    return true;
+// Build 900 guild member suspects from CASE_4_LEDGER_NAMES (15 pages x 15 rows x 4 cols = 60 per page)
+export const CASE_4_SUSPECTS: Suspect[] = CASE_4_LEDGER_NAMES.map((name, i) => {
+  const pageNumber = Math.floor(i / 60) + 1;
+  const row = Math.floor((i % 60) / 4) + 1;
+  const col = (i % 4) + 1;
+  const slot = (row - 1) * 4 + col;
+  const id = `c4-p${pageNumber}-s${slot}-${name.toLowerCase()}`;
+  return {
+    id,
+    name,
+    firstName: name,
+    lastName: '',
+    pageNumber,
+    row,
+    col,
+    role: 'Guild Member',
+    traits: [`Page ${pageNumber}`],
+    isGuest: false,
   };
-
-  const passing = pool.filter((n) => passesC1235(n));
-  const failing = pool.filter((n) => !passesC1235(n));
-
-  const suspects: Suspect[] = [];
-  let passIdx = 0;
-  let failIdx = 0;
-
-  for (let page = 1; page <= 6; page++) {
-    for (let slot = 1; slot <= 50; slot++) {
-      const isLeft = slot <= 25;
-      const row = Math.floor((slot - 1) / 4) + 1;
-      const col = ((slot - 1) % 4) + 1;
-
-      let name = '';
-      if (page === 4 && slot === 22) {
-        name = 'Kallum';
-      } else if (page === 4) {
-        name = failing[failIdx++];
-      } else if (page === 2 && (slot === 10 || slot === 30)) {
-        name = passing[passIdx++];
-      } else if (page === 6 && (slot === 15 || slot === 40)) {
-        name = passing[passIdx++];
-      } else if ((page === 1 || page === 3 || page === 5) && (slot === 12 || slot === 25 || slot === 38)) {
-        name = passing[passIdx++];
-      } else {
-        name = failing[failIdx++];
-      }
-
-      const id = `c4-p${page}-s${slot}-${name.toLowerCase()}`;
-      const isKiller = name === 'Kallum' && page === 4;
-
-      suspects.push({
-        id,
-        name,
-        firstName: name,
-        lastName: '',
-        pageNumber: page,
-        row,
-        col,
-        role: isKiller
-          ? 'Master Apprentice • East Spire Catwalk'
-          : `Guild Member #${slot} • ${isLeft ? 'West Gallery' : 'East Gallery'}`,
-        traits: [`Page ${page} - Seat ${slot}`, isLeft ? 'Left Ledger' : 'Right Ledger'],
-        isGuest: isKiller || slot === 1,
-        alibi: isKiller
-          ? 'Claimed he was attending the lower bell crank during the stroke of midnight.'
-          : undefined,
-      });
-    }
-  }
-
-  return suspects;
-}
-
-export const CASE_4_SUSPECTS: Suspect[] = generateCase4Suspects();
+});
 
 export const CASE_4_DATA: CaseData = {
   id: 'case-4',
   code: 'Case 4',
   title: 'The Pendulum Over Blackwood Spire',
-  tagline: 'A locked clocktower vault, thirteen midnight chimes, and 300 Guild names under sabotage.',
+  tagline: 'A locked clocktower vault, thirteen midnight chimes, and 900 guild names',
   difficulty: 'Mastermind',
-  estimatedTime: '20-25 mins',
+  estimatedTime: '1-2 hours',
   dateAdded: 'Mastermind Case',
   victim: 'Archibald Blackwood (Grand Horologist & Guildmaster)',
   setting:
-    'The Mechanical Clocktower of Blackwood Spire. Exactly 300 horological guild members and city dignitaries are inscribed across a 6-page registry.',
+    'The Mechanical Clocktower of Blackwood Spire. Exactly 900 horological guild members and city dignitaries are inscribed across a 15-page registry.',
   scene: 'Grand Pendulum Chamber & Gearwork Gallery',
   timeOfCrime: '12:00 Midnight (The Unscheduled 13th Chime)',
   briefing:
-    'At the stroke of midnight, the bells of Blackwood Spire tolled thirteen times before grinding to a halt. Master horologist Archibald Blackwood was discovered fallen within the pendulum vault. The heavy brass gears had been jammed with an engraved cog tooth, and the registry ledger of 300 attendees holds the identity of the sabotaging conspirator. Use the 7 sequential clues, cross out innocent clockmakers across the 6 pages, and submit the warrant for the culprit!',
+    'At the stroke of midnight, the bells of Blackwood Spire tolled thirteen times before grinding to a halt. Master horologist Archibald Blackwood was discovered fallen within the pendulum vault. The heavy brass gears had been jammed with an engraved cog tooth, and the registry ledger of 900 guild members holds the identity of the sabotaging conspirator. Use the 7 sequential clues, cross out innocent clockmakers across the 15 pages, and submit the warrant for the culprit!',
   dossiers: CASE_4_DOSSIERS,
   clues: CASE_4_CLUES,
-  totalPages: 6,
-  namesPerPage: 50,
+  totalPages: 15,
+  namesPerPage: 60,
   suspects: CASE_4_SUSPECTS,
   solution: {
-    killerName: 'Kallum',
-    killerPage: 4,
-    row: 6,
-    col: 2,
+    killerName: 'Woodrow',
+    killerPage: 11,
+    row: 7,
+    col: 3,
     motive: 'Sabotaged the master pendulum gear to seize the Blackwood Horological Guild patents.',
-    gridLocation: 'Page 4, Left Ledger, Seat 22 (R6:C2)'
+    gridLocation: 'Page 11, Row 7, Column 3 (R7:C3)'
   },
   solutionBrief:
-    'Kallum wedged a custom-ground brass tooth into the deadbeat escapement at 11:59 PM to induce an escapement jump, causing the 13th chime and sabotaging Archibald Blackwood.',
+    'Woodrow wedged a custom-ground brass tooth into the deadbeat escapement at 11:59 PM to induce an escapement jump, causing the 13th chime and sabotaging Archibald Blackwood.',
   imageUrl: case4Image
 };

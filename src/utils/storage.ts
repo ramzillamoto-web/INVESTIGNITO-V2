@@ -299,5 +299,95 @@ export function formatTime(seconds: number | null | undefined): string {
   return `${pad(mins)}:${pad(secs)}`;
 }
 
+export function generateSyncCode(progressData: Record<string, CaseProgress>): string {
+  try {
+    const payload = {
+      v: STORAGE_VERSION,
+      t: Date.now(),
+      c: progressData,
+    };
+    const json = JSON.stringify(payload);
+    const encoded = btoa(
+      encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p1) => {
+        return String.fromCharCode(parseInt(p1, 16));
+      })
+    );
+    return `INV-${encoded}`;
+  } catch (e) {
+    console.error('Failed to generate sync code:', e);
+    return '';
+  }
+}
+
+export function parseSyncCode(input: string): Record<string, CaseProgress> | null {
+  if (!input || typeof input !== 'string') return null;
+  try {
+    let raw = input.trim();
+    if (raw.includes('?')) {
+      const urlQuery = raw.split('?')[1] || '';
+      const params = new URLSearchParams(urlQuery);
+      const queryVal = params.get('restore') || params.get('sync');
+      if (queryVal) {
+        raw = queryVal;
+      }
+    }
+
+    if (raw.startsWith('INV-')) {
+      raw = raw.substring(4);
+    }
+
+    const decodedStr = decodeURIComponent(
+      Array.prototype.map
+        .call(atob(raw), (c: string) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const parsed = JSON.parse(decodedStr);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const cases = parsed.c || parsed.cases || parsed;
+    const migrated = migrateStorageData({ version: STORAGE_VERSION, cases });
+
+    const sanitized: Record<string, CaseProgress> = {};
+    for (const [key, item] of Object.entries(migrated)) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+      const rawItem = item as Record<string, any>;
+      const validStatus =
+        rawItem.status === 'solved' || rawItem.status === 'in_progress' || rawItem.status === 'unsolved'
+          ? rawItem.status
+          : 'unsolved';
+      sanitized[key] = {
+        ...getInitialProgress(key),
+        ...rawItem,
+        caseId: typeof rawItem.caseId === 'string' && rawItem.caseId ? rawItem.caseId : key,
+        status: validStatus,
+        markings:
+          rawItem.markings && typeof rawItem.markings === 'object' && !Array.isArray(rawItem.markings)
+            ? rawItem.markings
+            : {},
+        markingColors:
+          rawItem.markingColors && typeof rawItem.markingColors === 'object' && !Array.isArray(rawItem.markingColors)
+            ? rawItem.markingColors
+            : {},
+        checkedClues: Array.isArray(rawItem.checkedClues) ? rawItem.checkedClues : [],
+        notes: typeof rawItem.notes === 'string' ? rawItem.notes : '',
+        elapsedSeconds:
+          typeof rawItem.elapsedSeconds === 'number' && !isNaN(rawItem.elapsedSeconds) && isFinite(rawItem.elapsedSeconds)
+            ? Math.max(0, rawItem.elapsedSeconds)
+            : 0,
+      };
+    }
+
+    return Object.keys(sanitized).length > 0 ? sanitized : null;
+  } catch (e) {
+    console.warn('Failed to parse sync code or payload:', e);
+    return null;
+  }
+}
+
+export function generateSyncUrl(code: string): string {
+  if (typeof window === 'undefined') return '';
+  const base = window.location.origin + window.location.pathname;
+  return `${base}?restore=${encodeURIComponent(code)}`;
+}
+
 export { COOLDOWN_DURATION_MS };
 

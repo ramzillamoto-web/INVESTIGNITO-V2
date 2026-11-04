@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Trophy, CheckCircle, Clock, Lock, RotateCcw, MapPin, Calendar, Unlock, ArrowRight } from 'lucide-react';
+import { Trophy, CheckCircle, Clock, Lock, RotateCcw, MapPin, Calendar, Unlock, ArrowRight, Play } from 'lucide-react';
 import { CaseData, CaseProgress } from '../types';
 import { formatTime } from '../utils/storage';
+import { CASE_OUTROS } from '../data/outros';
 
 interface CongratulationsModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface CongratulationsModalProps {
   onGoToNextCase?: (caseId: string) => void;
   onReturnToArchive: () => void;
   onRestartCase?: () => void;
+  onWatchEnding?: () => void;
 }
 
 export const CongratulationsModal: React.FC<CongratulationsModalProps> = ({
@@ -22,6 +24,7 @@ export const CongratulationsModal: React.FC<CongratulationsModalProps> = ({
   onGoToNextCase,
   onReturnToArchive,
   onRestartCase,
+  onWatchEnding,
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -54,6 +57,7 @@ export const CongratulationsModal: React.FC<CongratulationsModalProps> = ({
   const isCase2 = caseItem.id === 'case-2';
   const isCase3 = caseItem.id === 'case-3';
   const isCase4 = caseItem.id === 'case-4';
+  const hasOutro = Boolean(CASE_OUTROS[caseItem.id]);
 
   return (
     <div
@@ -72,7 +76,7 @@ export const CongratulationsModal: React.FC<CongratulationsModalProps> = ({
           <span className="text-xs font-mono font-black uppercase tracking-widest text-emerald-400 block mb-1">
             {isCase4 ? 'MASTER INVESTIGATION SOLVED • ALL CASES COMPLETE' : 'CASE CLOSED • CULPRIT APPREHENDED'}
           </span>
-          <h2 className="text-3xl font-black font-display uppercase tracking-tight text-white">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black font-display uppercase tracking-tight text-white break-words">
             Congratulations, Detective!
           </h2>
           <p className="text-sm font-bold text-neutral-300 mt-2">
@@ -110,29 +114,33 @@ export const CongratulationsModal: React.FC<CongratulationsModalProps> = ({
           </div>
         )}
 
-        {/* Case 4 Notice for Case 3 completion: Locked, coming soon */}
+        {/* Case 4 Unlock Banner for Case 3 completion */}
         {isCase3 && (
-          <div className="bg-gradient-to-r from-neutral-900 via-amber-950/60 to-neutral-900 border-2 border-amber-500/80 p-4 rounded-xl mb-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500 flex items-center justify-center text-amber-400 shrink-0">
-                <Clock className="w-5 h-5 animate-pulse" />
+          <div className="bg-gradient-to-r from-emerald-950/90 to-neutral-950 border-2 border-emerald-500/80 p-4 rounded-xl mb-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3 text-left">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-emerald-400 shrink-0">
+                <Unlock className="w-5 h-5 animate-pulse" />
               </div>
               <div>
-                <span className="text-[10px] font-mono font-black uppercase tracking-widest text-amber-400 block">
-                  NEXT CASE • COMING SOON
+                <span className="text-[10px] font-mono font-black uppercase tracking-widest text-emerald-400 block">
+                  NEW CASE FILE UNLOCKED: Case 4
                 </span>
                 <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-tight">
                   Case 4: The Pendulum Over Blackwood Spire
                 </h4>
-                <p className="text-[11px] text-neutral-300 font-medium mt-0.5">
-                  Case #4 is locked and will come soon! Scotland Yard detectives are currently sealing the clocktower evidence.
-                </p>
               </div>
             </div>
-            <div className="px-3.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/40 text-amber-400 font-mono font-black text-xs uppercase tracking-wider shrink-0 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" />
-              <span>Coming Soon</span>
-            </div>
+            {onGoToNextCase && (
+              <button
+                id="modal-launch-case-4-btn"
+                type="button"
+                onClick={() => onGoToNextCase('case-4')}
+                className="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <span>Launch Case 4</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         )}
 
@@ -156,7 +164,7 @@ export const CongratulationsModal: React.FC<CongratulationsModalProps> = ({
           </div>
           <div>
             <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest block">GRID SLOT</span>
-            <span className="text-xs font-black text-emerald-400 block truncate mt-0.5">
+            <span className="text-[11px] sm:text-xs font-black text-emerald-400 block break-words mt-0.5">
               R{caseItem.solution?.row}:C{caseItem.solution?.col} (P{caseItem.solution?.killerPage})
             </span>
           </div>
@@ -176,6 +184,18 @@ export const CongratulationsModal: React.FC<CongratulationsModalProps> = ({
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-2.5">
+          {hasOutro && onWatchEnding && (
+            <button
+              id="modal-watch-ending-btn"
+              type="button"
+              onClick={onWatchEnding}
+              className="w-full py-2.5 sm:py-3 px-4 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-mono uppercase tracking-widest font-black transition-colors border border-neutral-700 flex items-center justify-center gap-2 cursor-pointer shadow-md"
+            >
+              <Play className="w-3.5 h-3.5 text-red-500 fill-current" />
+              <span>Watch Ending</span>
+            </button>
+          )}
+
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <button
               id="modal-return-archive-btn"

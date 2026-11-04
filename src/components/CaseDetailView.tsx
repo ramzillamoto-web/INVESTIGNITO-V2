@@ -509,34 +509,26 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center space-y-6 animate-fade-in bg-[#0a0a0a] min-h-[70vh] flex flex-col items-center justify-center">
         <div className="w-20 h-20 rounded-2xl bg-amber-950/80 border-2 border-amber-600 flex items-center justify-center text-amber-400 shadow-2xl mx-auto">
-          {isCase4Target ? <Clock className="w-10 h-10 animate-pulse" /> : <Lock className="w-10 h-10" />}
+          <Lock className="w-10 h-10" />
         </div>
         <div className="space-y-3">
           <span className="px-3.5 py-1 rounded bg-amber-950/90 border border-amber-700 text-amber-300 font-mono text-xs font-black uppercase tracking-widest inline-block">
-            {isCase4Target ? 'CLASSIFIED DOSSIER • CASE #4 COMING SOON' : 'RESTRICTED ACCESS • LEVEL 3 CLEARANCE REQUIRED'}
+            {isCase4Target ? 'RESTRICTED ACCESS • SOLVE CASE 3 FIRST' : 'RESTRICTED ACCESS • LEVEL 3 CLEARANCE REQUIRED'}
           </span>
           <h1 className="text-3xl sm:text-4xl font-black font-display uppercase tracking-tight text-white">
-            {isCase4Target ? 'Case #4 Coming Soon' : `${caseItem.title} is Locked`}
+            {isCase4Target ? 'Solve Case 3 first' : `${caseItem.title} is Locked`}
           </h1>
           <p className="text-neutral-300 max-w-lg mx-auto text-sm sm:text-base leading-relaxed font-medium">
-            {isCase4Target ? (
-              <>
-                <strong>Case #4: The Pendulum Over Blackwood Spire</strong> will come soon! Our Scotland Yard archives and clockmaker guild registries are currently undergoing evidence sealing. Keep your instincts sharp—it will arrive in the next case release.
-              </>
-            ) : (
-              <>
-                Detective clearance for {caseItem.title} requires apprehending the culprit in <strong>{reqCaseTitle}</strong> first.
-              </>
-            )}
+            Detective clearance for {caseItem.title} requires apprehending the culprit in <strong>{reqCaseTitle}</strong> first.
           </p>
         </div>
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md">
           {onSwitchToCase && (
             <button
-              onClick={() => onSwitchToCase(isCase4Target ? 'how_to_play' : 'case-2')}
+              onClick={() => onSwitchToCase(isCase4Target ? 'case-3' : 'case-2')}
               className="w-full py-3.5 px-6 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono font-black text-sm uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer shadow-red-950/50"
             >
-              <span>{isCase4Target ? 'Return to All Cases' : 'Investigate Case 2'}</span>
+              <span>{isCase4Target ? 'Play Case 3' : 'Investigate Case 2'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
@@ -1040,7 +1032,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                   Registry Ledger
                 </span>
                 <span className="text-[9px] sm:text-[10px] font-mono font-bold text-amber-200/80 block mt-0.5 truncate">
-                  Page {currentPage}/{caseItem.totalPages} • {remainingSurviving} Remaining
+                  Page {currentPage}/{caseItem.totalPages}{caseItem.id !== 'case-4' ? ` • ${remainingSurviving} Remaining` : ''}
                 </span>
               </div>
             </div>
@@ -1155,17 +1147,23 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
 
                 {/* Right side controls: Search Filter + Sticky Expanding Tool Button in the circled spot */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                  {/* Search Filter */}
-                  <div className="relative">
-                    <Search className="w-3 h-3 sm:w-4 sm:h-4 absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-                    <input
-                      type="text"
-                      placeholder="Filter name or role..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-[#0a0a0a] border border-neutral-700 rounded-lg pl-7 sm:pl-9 pr-2.5 sm:pr-3 py-1 sm:py-2 text-[10px] sm:text-xs font-bold text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 w-32 sm:w-44 md:w-52 font-mono"
-                    />
-                  </div>
+                  {/* Search Filter (hidden for Case 4) */}
+                  {caseItem.id !== 'case-4' && (
+                    <div className="relative">
+                      <Search className="w-3 h-3 sm:w-4 sm:h-4 absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <input
+                        type="text"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        placeholder="Filter name or role..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-[#0a0a0a] border border-neutral-700 rounded-lg pl-7 sm:pl-9 pr-2.5 sm:pr-3 py-1 sm:py-2 text-[10px] sm:text-xs font-bold text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 w-32 sm:w-44 md:w-52 font-mono"
+                      />
+                    </div>
+                  )}
 
                   {/* Collapsed TOOL Button (located to the right of the search filter as circled) */}
                   {!isToolsExpanded ? (
@@ -1343,9 +1341,11 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                       <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-amber-400">
                         ○ {circledTotal}
                       </span>
-                      <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
-                        {remainingSurviving} LEFT
-                      </span>
+                      {caseItem.id !== 'case-4' && (
+                        <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
+                          {remainingSurviving} LEFT
+                        </span>
+                      )}
                     </div>
 
                     <button
@@ -1373,6 +1373,16 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               )}
             </div>
 
+            {/* Column labels for Case 4 (Columns 1-4) */}
+            {caseItem.id === 'case-4' && (
+              <div className="grid grid-cols-4 gap-1 sm:gap-2.5 lg:gap-3 mb-1.5 font-mono text-[9px] sm:text-[10px] text-neutral-400 text-center font-bold tracking-wider select-none">
+                <span className="py-0.5 rounded bg-neutral-900/90 border border-neutral-800 text-neutral-400">COL 1</span>
+                <span className="py-0.5 rounded bg-neutral-900/90 border border-neutral-700 text-neutral-200">COL 2</span>
+                <span className="py-0.5 rounded bg-neutral-900/90 border border-neutral-700 text-neutral-200">COL 3</span>
+                <span className="py-0.5 rounded bg-neutral-900/90 border border-neutral-800 text-neutral-400">COL 4</span>
+              </div>
+            )}
+
             {/* 4 in a row on all screen sizes to save vertical and horizontal space */}
             <div className="grid grid-cols-4 gap-1 sm:gap-2.5 lg:gap-3 mb-4 sm:mb-6">
               {suspectsOnCurrentPage.map((suspect) => {
@@ -1393,7 +1403,9 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                     onClick={() => handleApplyMarking(suspect)}
                     className={`relative p-1 sm:p-2.5 lg:p-3 rounded-md sm:rounded-lg border transition-all duration-150 cursor-pointer select-none group flex flex-col justify-between touch-manipulation active:scale-[0.98] min-w-0 ${
                       isCrossed
-                        ? 'bg-[#0a0a0a]/90 border-neutral-800 opacity-60 hover:opacity-90'
+                        ? caseItem.id === 'case-4'
+                          ? 'bg-[#0a0a0a]/90 border-neutral-800 opacity-90 hover:opacity-100'
+                          : 'bg-[#0a0a0a]/90 border-neutral-800 opacity-60 hover:opacity-90'
                         : isCircled
                         ? 'bg-neutral-900 shadow-lg'
                         : 'bg-[#0a0a0a] border-neutral-800 hover:border-neutral-600'
@@ -1456,7 +1468,9 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                         <h3
                           className={`text-[9px] sm:text-[11px] md:text-xs lg:text-sm uppercase tracking-tight sm:tracking-normal whitespace-normal break-words leading-tight ${
                             isCrossed
-                              ? 'line-through text-neutral-500 font-light'
+                              ? caseItem.id === 'case-4'
+                                ? 'line-through text-neutral-300 font-medium'
+                                : 'line-through text-neutral-500 font-light'
                               : isCircled
                               ? 'font-bold'
                               : 'text-neutral-100 group-hover:text-red-400 font-light sm:font-normal'
@@ -1724,7 +1738,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmitAccusation} className="space-y-4 sm:space-y-5">
+        <form onSubmit={handleSubmitAccusation} className="space-y-4 sm:space-y-5" autoComplete="off">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {/* Killer's Single Name Input */}
             <div className="sm:col-span-2">
@@ -1740,6 +1754,10 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 required
                 maxLength={64}
                 disabled={isCooldownActive}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 placeholder="Enter suspect name..."
                 value={suspectNameInput}
                 onChange={(e) => setSuspectNameInput(e.target.value)}

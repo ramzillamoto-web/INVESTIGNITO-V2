@@ -73,6 +73,47 @@
     }
   }
 
+  /* Case 4 Top & Bottom Animated Laser Beams */
+  @keyframes laserScanH {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(250%);
+    }
+  }
+
+  @keyframes laserScanHReverse {
+    0% {
+      transform: translateX(250%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  /* Case 4 Breathing Border Aura Pulse */
+  @keyframes borderAuraPulse {
+    0%, 100% {
+      box-shadow: 0 0 18px rgba(220, 38, 38, 0.35), 0 0 35px rgba(185, 28, 28, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 32px rgba(239, 68, 68, 0.7), 0 0 65px rgba(220, 38, 38, 0.45);
+    }
+  }
+
+  .animate-laser-scan-h {
+    animation: laserScanH 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  .animate-laser-scan-h-reverse {
+    animation: laserScanHReverse 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  .animate-border-aura-pulse {
+    animation: borderAuraPulse 3s ease-in-out infinite;
+  }
+
   .animate-pumping-green {
     animation: pumpGreen 1.4s ease-in-out infinite;
   }

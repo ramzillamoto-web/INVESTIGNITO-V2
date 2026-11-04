@@ -10,6 +10,7 @@ import {
   Shield,
   ArrowRight,
   Sparkles,
+  FolderSync,
 } from 'lucide-react';
 import { InvestignitoLogo } from './InvestignitoLogo';
 
@@ -74,9 +75,10 @@ export const HOW_TO_PLAY_STEPS: HowToPlayStep[] = [
 interface HowToPlayModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenSync?: () => void;
 }
 
-export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose }) => {
+export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose, onOpenSync }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [imageError, setImageError] = useState<Record<number, boolean>>({});
 
@@ -345,7 +347,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
         </div>
 
         {/* Footer Actions: Primary "Start Investigation" CTA */}
-        <div className="p-5 border-t border-neutral-800/80 bg-[#09090c] flex flex-col sm:flex-row items-center gap-3">
+        <div className="p-4 sm:p-5 border-t border-neutral-800/80 bg-[#09090c] space-y-3">
           <button
             id="start-investigation-btn"
             type="button"
@@ -355,6 +357,20 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ isOpen, onClose 
             <span>Start Investigation</span>
             <ArrowRight className="w-4 h-4" />
           </button>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 border-t border-neutral-900 text-[11px] font-mono text-neutral-400">
+            <span>Instant Play • No access code required</span>
+            {onOpenSync && (
+              <button
+                type="button"
+                onClick={onOpenSync}
+                className="text-red-400 hover:text-red-300 transition-colors flex items-center gap-1 cursor-pointer font-bold"
+              >
+                <FolderSync className="w-3.5 h-3.5" />
+                <span>Switching Devices? Backup / Sync Progress</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

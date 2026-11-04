@@ -21,7 +21,11 @@ import { CooldownModal } from './components/CooldownModal';
 import { DarkMistBackground } from './components/DarkMistBackground';
 import { ManageSubscriptionModal } from './components/ManageSubscriptionModal';
 import { AddToDeviceModal } from './components/AddToDeviceModal';
+import { SyncProgressModal } from './components/SyncProgressModal';
 import { useAddToDevice } from './hooks/useAddToDevice';
+import { CASE_OUTROS } from './data/outros';
+import { hasSeenOutro, markOutroSeen, shouldSkipAutomaticOutro } from './utils/outro';
+import { OutroVideo } from './components/OutroVideo';
 
 export default function App() {
   // Add to Device state and prompt handling
@@ -57,10 +61,39 @@ export default function App() {
     return !hasSeenHowTo();
   });
   const [showCongratulationsModal, setShowCongratulationsModal] = useState<boolean>(false);
+  const [showOutro, setShowOutro] = useState<boolean>(false);
+  const [isReplayingOutro, setIsReplayingOutro] = useState<boolean>(false);
   const [showCooldownModal, setShowCooldownModal] = useState<boolean>(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState<boolean>(false);
+  const [showSyncModal, setShowSyncModal] = useState<boolean>(false);
+  const [syncModalMode, setSyncModalMode] = useState<'backup' | 'restore'>('backup');
+  const [incomingSyncCode, setIncomingSyncCode] = useState<string | null>(null);
   const [unlockedCaseBanner, setUnlockedCaseBanner] = useState<string | null>(null);
   const [showSavedIndicator, setShowSavedIndicator] = useState<boolean>(false);
+
+  // Auto-detect 1-click restore link in URL (?restore=... or ?sync=...)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('restore') || params.get('sync');
+      if (code) {
+        setIncomingSyncCode(code);
+        setSyncModalMode('restore');
+        setShowSyncModal(true);
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    } catch (e) {
+      console.warn('URL restore check error:', e);
+    }
+  }, []);
+
+  const handleRestoreProgress = (restored: Record<string, CaseProgress>) => {
+    setAllProgress(restored);
+    saveAllProgress(restored, true);
+    setShowSavedIndicator(true);
+  };
 
   // Sync with localStorage
   useEffect(() => {
@@ -134,14 +167,41 @@ export default function App() {
     }));
     setShowCongratulationsModal(false);
     setShowCooldownModal(false);
+    setShowOutro(false);
   };
 
   const handleSolveCase = () => {
-    setShowCongratulationsModal(true);
+    const hasOutro = Boolean(CASE_OUTROS[selectedCase.id]);
+    const alreadySeen = hasSeenOutro(selectedCase.id);
+    const skipAuto = shouldSkipAutomaticOutro();
+
+    if (hasOutro && !alreadySeen && !skipAuto) {
+      setIsReplayingOutro(false);
+      setShowOutro(true);
+    } else {
+      setShowCongratulationsModal(true);
+    }
+
     if (selectedCase.id === 'case-2') {
       setUnlockedCaseBanner('case-3');
+    } else if (selectedCase.id === 'case-3') {
+      setUnlockedCaseBanner('case-4');
     }
-    // Case 4 is locked even if Case 3 is solved; players are informed it will come soon
+  };
+
+  const handleOutroFinish = () => {
+    if (!isReplayingOutro) {
+      markOutroSeen(selectedCase.id);
+    }
+    setIsReplayingOutro(false);
+    setShowOutro(false);
+    setShowCongratulationsModal(true);
+  };
+
+  const handleWatchEnding = () => {
+    setIsReplayingOutro(true);
+    setShowCongratulationsModal(false);
+    setShowOutro(true);
   };
 
   const handleFailedSubmission = () => {
@@ -149,8 +209,7 @@ export default function App() {
   };
 
   const isCase3Locked = selectedCase.id === 'case-3' && allProgress['case-2']?.status !== 'solved';
-  // Case #4 is locked even if Case #3 is finished; players are told it will come soon
-  const isCase4Locked = selectedCase.id === 'case-4';
+  const isCase4Locked = selectedCase.id === 'case-4' && allProgress['case-3']?.status !== 'solved';
   const isCurrentCaseLocked = isCase3Locked || isCase4Locked;
 
   const handleOpenSubscription = () => {
@@ -171,6 +230,10 @@ export default function App() {
         onOpenHelp={() => setShowHelpModal(true)}
         onOpenSubscription={handleOpenSubscription}
         onAddToDevice={triggerAddToDevice}
+        onOpenSync={() => {
+          setSyncModalMode('backup');
+          setShowSyncModal(true);
+        }}
         isStandalone={isStandalone}
       />
 
@@ -188,6 +251,10 @@ export default function App() {
             }}
             onOpenSubscription={handleOpenSubscription}
             onAddToDevice={triggerAddToDevice}
+            onOpenSync={() => {
+              setSyncModalMode('backup');
+              setShowSyncModal(true);
+            }}
             isStandalone={isStandalone}
           />
         )}
@@ -215,6 +282,15 @@ export default function App() {
         )}
       </main>
 
+      {/* End-of-Case Outro Video Overlay */}
+      {showOutro && CASE_OUTROS[selectedCase.id] && (
+        <OutroVideo
+          src={CASE_OUTROS[selectedCase.id].src}
+          poster={CASE_OUTROS[selectedCase.id].poster}
+          onFinish={handleOutroFinish}
+        />
+      )}
+
       {/* Victory Congratulations Modal */}
       <CongratulationsModal
         isOpen={showCongratulationsModal}
@@ -234,6 +310,7 @@ export default function App() {
           setShowCongratulationsModal(false);
           handleResetCase();
         }}
+        onWatchEnding={handleWatchEnding}
       />
 
       {/* False Accusation 5-Minute Penalty Cooldown Modal */}
@@ -247,6 +324,11 @@ export default function App() {
       <HowToPlayModal
         isOpen={showHelpModal}
         onClose={handleCloseHelpModal}
+        onOpenSync={() => {
+          setShowHelpModal(false);
+          setSyncModalMode('backup');
+          setShowSyncModal(true);
+        }}
       />
 
       {/* Detective Membership & Billing Modal */}
@@ -260,6 +342,19 @@ export default function App() {
         isOpen={showAddToDeviceModal}
         onClose={handleCloseAddToDeviceModal}
         deferredPrompt={deferredPrompt}
+      />
+
+      {/* Case Progress Transfer & Backup Modal */}
+      <SyncProgressModal
+        isOpen={showSyncModal}
+        onClose={() => {
+          setShowSyncModal(false);
+          setIncomingSyncCode(null);
+        }}
+        allProgress={allProgress}
+        onRestoreProgress={handleRestoreProgress}
+        initialMode={syncModalMode}
+        incomingCode={incomingSyncCode}
       />
 
       {/* Unobtrusive "Progress saved" indicator */}
