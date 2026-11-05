@@ -184,17 +184,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Manage Subscription</span>
             </a>
 
-            {/* Desktop Sync / Backup Button */}
+            {/* Sync / Backup Button with Glowing Green Icon */}
             {onOpenSync && (
               <button
                 type="button"
                 onClick={onOpenSync}
-                className="hidden sm:flex items-center gap-1 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-neutral-300 hover:text-white px-2 sm:px-2.5 py-1 sm:py-1.5 rounded bg-neutral-900 border border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-1.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-neutral-200 hover:text-white min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 px-2.5 sm:px-2.5 py-1 sm:py-1.5 rounded-lg sm:rounded bg-neutral-900/90 border border-emerald-500/50 hover:border-emerald-400 hover:bg-neutral-800 transition-all cursor-pointer shadow-sm shadow-emerald-950/40 shrink-0 group"
                 title="Backup or transfer case progress to another device"
                 aria-label="Backup and Sync Progress"
               >
-                <FolderSync className="w-3.5 h-3.5 text-red-400" />
-                <span className="hidden lg:inline">Sync / Backup</span>
+                <FolderSync className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.9)] group-hover:scale-110 transition-transform" />
+                <span className="hidden lg:inline group-hover:text-emerald-300 transition-colors">Sync / Backup</span>
               </button>
             )}
 
@@ -246,17 +246,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Manage Subscription</span>
             </a>
 
-            {/* Desktop Sync / Backup Button */}
+            {/* Sync / Backup Button with Glowing Green Icon */}
             {onOpenSync && (
               <button
                 type="button"
                 onClick={onOpenSync}
-                className="hidden sm:flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-neutral-300 hover:text-white px-2.5 sm:px-3 py-1.5 rounded bg-neutral-900 border border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800 transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-neutral-200 hover:text-white min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded bg-neutral-900/90 border border-emerald-500/50 hover:border-emerald-400 hover:bg-neutral-800 transition-all cursor-pointer shadow-sm shadow-emerald-950/40 shrink-0 group"
                 title="Backup or transfer case progress to another device"
                 aria-label="Backup and Sync Progress"
               >
-                <FolderSync className="w-3.5 h-3.5 text-red-400" />
-                <span>Sync / Backup</span>
+                <FolderSync className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.9)] group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline group-hover:text-emerald-300 transition-colors">Sync / Backup</span>
               </button>
             )}
 

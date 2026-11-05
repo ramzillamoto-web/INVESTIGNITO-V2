@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Check } from 'lucide-react';
+import { Check, AlertTriangle, ExternalLink, X } from 'lucide-react';
 import { CASE_1_DATA, CASES_DATA } from './data/cases';
 import { ViewMode, CaseData, CaseProgress } from './types';
 import {
@@ -12,6 +12,12 @@ import {
   markSeenHowTo,
   onProgressSaved,
 } from './utils/storage';
+import {
+  initPersistentStorage,
+  checkAndRecoverFromIndexedDB,
+  initCrossTabSync,
+  isInAppBrowser,
+} from './utils/persistence';
 import { Navbar } from './components/Navbar';
 import { LandingView } from './components/LandingView';
 import { CaseDetailView } from './components/CaseDetailView';
@@ -22,10 +28,12 @@ import { DarkMistBackground } from './components/DarkMistBackground';
 import { ManageSubscriptionModal } from './components/ManageSubscriptionModal';
 import { AddToDeviceModal } from './components/AddToDeviceModal';
 import { SyncProgressModal } from './components/SyncProgressModal';
+import { SyncCalloutToast } from './components/SyncCalloutToast';
 import { useAddToDevice } from './hooks/useAddToDevice';
 import { CASE_OUTROS } from './data/outros';
 import { hasSeenOutro, markOutroSeen, shouldSkipAutomaticOutro } from './utils/outro';
 import { OutroVideo } from './components/OutroVideo';
+import { applyCaseVersionResets } from './utils/caseVersions';
 
 export default function App() {
   // Add to Device state and prompt handling
@@ -48,7 +56,12 @@ export default function App() {
   });
 
   const [allProgress, setAllProgress] = useState<Record<string, CaseProgress>>(() => {
-    return loadAllProgress();
+    const raw = loadAllProgress();
+    const { updated, changed } = applyCaseVersionResets(raw);
+    if (changed) {
+      saveAllProgress(updated, true);
+    }
+    return updated;
   });
 
   // Save session when view or selected case changes
@@ -70,6 +83,86 @@ export default function App() {
   const [incomingSyncCode, setIncomingSyncCode] = useState<string | null>(null);
   const [unlockedCaseBanner, setUnlockedCaseBanner] = useState<string | null>(null);
   const [showSavedIndicator, setShowSavedIndicator] = useState<boolean>(false);
+
+  // In-App browser banner state (Instagram, TikTok, Facebook, etc.)
+  const [showInAppBanner, setShowInAppBanner] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const dismissed = sessionStorage.getItem('investignito_inapp_dismissed');
+      return isInAppBrowser() && dismissed !== '1';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleDismissInAppBanner = () => {
+    setShowInAppBanner(false);
+    try {
+      sessionStorage.setItem('investignito_inapp_dismissed', '1');
+    } catch {
+      // ignore
+    }
+  };
+
+  // Corner popping callout message to discover the Sync / Backup feature
+  const [showSyncCallout, setShowSyncCallout] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const dismissed = localStorage.getItem('investignito_sync_tip_dismissed_v1');
+      if (dismissed === 'true') return;
+
+      // Pop up after 4.5 seconds to introduce the feature to the user
+      const timer = setTimeout(() => {
+        setShowSyncCallout(true);
+      }, 4500);
+
+      return () => clearTimeout(timer);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleDismissSyncCallout = () => {
+    setShowSyncCallout(false);
+    try {
+      localStorage.setItem('investignito_sync_tip_dismissed_v1', 'true');
+    } catch {
+      // ignore
+    }
+  };
+
+  // 1. Initialize Persistent Storage API (prohibits iOS/Android overnight eviction)
+  // 2. Disaster Recovery: Check if IndexedDB has backup if localStorage was cleared
+  // 3. Multi-Tab / Cross-Window Synchronization (BroadcastChannel + storage events)
+  useEffect(() => {
+    initPersistentStorage();
+
+    // Check if current in-memory progress is empty, and attempt recovery from IndexedDB
+    const hasMeaningfulData = Object.values(allProgress).some(
+      (p) => p.status !== 'unsolved' || (p.markings && Object.keys(p.markings).length > 0)
+    );
+
+    if (!hasMeaningfulData) {
+      checkAndRecoverFromIndexedDB().then((backupCases) => {
+        if (backupCases && Object.keys(backupCases).length > 0) {
+          setAllProgress(backupCases);
+          saveAllProgress(backupCases, true);
+          setShowSavedIndicator(true);
+        }
+      });
+    }
+
+    // Subscribe to cross-tab updates so other open tabs never overwrite with stale state
+    const unsubscribeSync = initCrossTabSync((remoteCases) => {
+      setAllProgress(remoteCases);
+    });
+
+    return () => {
+      unsubscribeSync();
+    };
+  }, []);
 
   // Auto-detect 1-click restore link in URL (?restore=... or ?sync=...)
   useEffect(() => {
@@ -100,7 +193,7 @@ export default function App() {
     saveAllProgress(allProgress);
   }, [allProgress]);
 
-  // Save immediately when page is hidden or closed (visibilitychange and pagehide)
+  // Save immediately when page is hidden, closed, or frozen (visibilitychange, pagehide, beforeunload, freeze)
   const allProgressRef = useRef(allProgress);
   allProgressRef.current = allProgress;
 
@@ -116,11 +209,15 @@ export default function App() {
     };
 
     window.addEventListener('pagehide', handleSaveImmediately);
+    window.addEventListener('beforeunload', handleSaveImmediately);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('freeze', handleSaveImmediately);
 
     return () => {
       window.removeEventListener('pagehide', handleSaveImmediately);
+      window.removeEventListener('beforeunload', handleSaveImmediately);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('freeze', handleSaveImmediately);
     };
   }, []);
 
@@ -220,6 +317,42 @@ export default function App() {
     <div className="min-h-screen bg-[#070709] text-[#f5f5f5] flex flex-col font-sans selection:bg-red-600 selection:text-white relative overflow-x-hidden">
       {/* Creepy Drifting Dark Mist & Blizzard Background */}
       <DarkMistBackground />
+
+      {/* In-App Browser Warning Banner for Instagram, Facebook, TikTok, Line, etc. */}
+      {showInAppBanner && (
+        <div
+          role="alert"
+          className="relative z-50 bg-gradient-to-r from-amber-950 via-neutral-900 to-amber-950 border-b border-amber-600/70 text-amber-200 px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-3 text-xs font-mono shadow-xl animate-fade-in"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
+            <p className="truncate sm:whitespace-normal text-[11px] sm:text-xs">
+              <span className="font-bold text-white">In-App Browser:</span> Progress may reset when closed. Tap <span className="text-white font-bold">•••</span> &gt; <span className="underline decoration-amber-400 font-bold text-white">Open in Safari / Chrome</span> to save permanently.
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setSyncModalMode('backup');
+                setShowSyncModal(true);
+              }}
+              className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-neutral-950 font-bold uppercase text-[10px] sm:text-xs transition-colors cursor-pointer flex items-center gap-1 shadow-sm"
+            >
+              <ExternalLink className="w-3 h-3" />
+              <span>Backup</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDismissInAppBanner}
+              className="p-1 rounded text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              aria-label="Dismiss banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Global Header */}
       <Navbar
@@ -369,6 +502,16 @@ export default function App() {
           <span className="text-neutral-200 font-bold tracking-wide">Progress saved</span>
         </div>
       )}
+
+      {/* Corner Popping Message to discover Sync / Backup feature */}
+      <SyncCalloutToast
+        isOpen={showSyncCallout}
+        onOpenSync={() => {
+          setSyncModalMode('backup');
+          setShowSyncModal(true);
+        }}
+        onDismiss={handleDismissSyncCallout}
+      />
     </div>
   );
 }

@@ -305,6 +305,10 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
   useEffect(() => {
     if (progress.status !== 'in_progress' || showHeartbeatSuspense) return;
     const timer = setInterval(() => {
+      // Pause timer updates when tab is hidden/backgrounded to prevent stale background overwrites
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
       onUpdateProgress((prev) => ({
         ...prev,
         elapsedSeconds: prev.elapsedSeconds + 1,
@@ -1377,8 +1381,8 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
             {caseItem.id === 'case-4' && (
               <div className="grid grid-cols-4 gap-1 sm:gap-2.5 lg:gap-3 mb-1.5 font-mono text-[9px] sm:text-[10px] text-neutral-400 text-center font-bold tracking-wider select-none">
                 <span className="py-0.5 rounded bg-neutral-900/90 border border-neutral-800 text-neutral-400">COL 1</span>
-                <span className="py-0.5 rounded bg-neutral-900/90 border border-neutral-700 text-neutral-200">COL 2</span>
-                <span className="py-0.5 rounded bg-neutral-900/90 border border-neutral-700 text-neutral-200">COL 3</span>
+                <span className="py-0.5 rounded bg-neutral-900/90 border border-neutral-800 text-neutral-400">COL 2</span>
+                <span className="py-0.5 rounded bg-neutral-900/90 border border-neutral-800 text-neutral-400">COL 3</span>
                 <span className="py-0.5 rounded bg-neutral-900/90 border border-neutral-800 text-neutral-400">COL 4</span>
               </div>
             )}

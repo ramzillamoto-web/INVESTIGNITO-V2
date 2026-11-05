@@ -236,6 +236,14 @@ export const AddToDeviceModal: React.FC<AddToDeviceModalProps> = ({
                   </p>
                 </div>
               </div>
+
+              {/* iOS Sandbox note */}
+              <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-800/60 text-amber-300 text-[11px] font-mono flex items-start gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Tip for iPhone users:</strong> Apple runs Home Screen apps in a separate sandbox from Safari. If you started playing in Safari, use <strong>Sync / Backup</strong> to copy your 1-Click Restore Link so you can resume on your Home Screen app.
+                </span>
+              </div>
             </div>
           )}
 

@@ -1,20 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Copy,
   Check,
   Mail,
   Smartphone,
-  Laptop,
-  ArrowRight,
+  Share2,
   ShieldCheck,
   AlertTriangle,
-  RotateCcw,
-  Sparkles,
   Download,
+  FileDown,
+  FileUp,
 } from 'lucide-react';
 import { CaseProgress } from '../types';
-import { generateSyncCode, generateSyncUrl, parseSyncCode } from '../utils/storage';
+import { generateSyncCode, generateSyncUrl, parseSyncCode, STORAGE_VERSION } from '../utils/storage';
 
 interface SyncProgressModalProps {
   isOpen: boolean;
@@ -40,6 +39,9 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const [restoreSuccess, setRestoreSuccess] = useState<string | null>(null);
   const [showRawCode, setShowRawCode] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   useEffect(() => {
     if (isOpen) {
@@ -61,9 +63,15 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
   const currentCode = generateSyncCode(allProgress);
   const currentUrl = generateSyncUrl(currentCode);
 
-  const activeCasesCount = Object.keys(allProgress).length;
   const solvedCount = Object.values(allProgress).filter((p) => p.status === 'solved').length;
   const inProgressCount = Object.values(allProgress).filter((p) => p.status === 'in_progress').length;
+
+  // Real-time preview of parsed restore input
+  const previewData = restoreInput.trim() ? parseSyncCode(restoreInput) : null;
+  const previewCaseCount = previewData ? Object.keys(previewData).length : 0;
+  const previewSolvedCount = previewData
+    ? Object.values(previewData).filter((p) => p.status === 'solved').length
+    : 0;
 
   const handleCopyLink = async () => {
     try {
@@ -103,6 +111,19 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
     }
   };
 
+  const handleNativeShare = async () => {
+    if (!canShare) return;
+    try {
+      await navigator.share({
+        title: 'My Investignito Case Progress',
+        text: 'Here is my 1-click restore link to continue my investigation:',
+        url: currentUrl,
+      });
+    } catch {
+      // User cancelled share dialog
+    }
+  };
+
   const handleEmailLink = () => {
     const subject = encodeURIComponent('My Investignito Case Progress Backup');
     const body = encodeURIComponent(
@@ -111,19 +132,63 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
+  const handleDownloadBackupFile = () => {
+    try {
+      const payload = {
+        version: STORAGE_VERSION,
+        exportDate: new Date().toISOString(),
+        cases: allProgress,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `investignito-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      setRestoreError('Failed to generate download file.');
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result;
+      if (typeof content === 'string') {
+        setRestoreInput(content);
+        setRestoreError(null);
+      }
+    };
+    reader.onerror = () => {
+      setRestoreError('Failed to read selected backup file.');
+    };
+    reader.readAsText(file);
+    // Reset file input so same file can be re-selected if desired
+    e.target.value = '';
+  };
+
   const handlePerformRestore = () => {
     setRestoreError(null);
     setRestoreSuccess(null);
 
     const parsed = parseSyncCode(restoreInput);
     if (!parsed || Object.keys(parsed).length === 0) {
-      setRestoreError('Invalid or corrupted backup code/link. Please check that you copied the complete link or code.');
+      setRestoreError(
+        'Invalid or corrupted backup. Please ensure you pasted a complete link (https://...?restore=INV-...), code (INV-...), or valid backup file.'
+      );
       return;
     }
 
     const restoredCount = Object.keys(parsed).length;
     onRestoreProgress(parsed);
-    setRestoreSuccess(`Investigation restored successfully! (${restoredCount} case${restoredCount > 1 ? 's' : ''} loaded)`);
+    setRestoreSuccess(
+      `Investigation restored successfully! (${restoredCount} case${restoredCount > 1 ? 's' : ''} loaded)`
+    );
     setTimeout(() => {
       onClose();
     }, 1800);
@@ -201,7 +266,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
             <div className="space-y-4">
               <div className="p-3 rounded-xl bg-neutral-900/90 border border-neutral-800 space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-neutral-400">Current Progress:</span>
+                  <span className="text-neutral-400">Current Saved Progress:</span>
                   <span className="text-red-400 font-bold">
                     {solvedCount > 0 ? `${solvedCount} Solved` : ''}
                     {solvedCount > 0 && inProgressCount > 0 ? ' • ' : ''}
@@ -210,15 +275,20 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-neutral-300 leading-relaxed">
-                  Moving from your phone to laptop, or switching browsers? Save this link so you never lose your eliminated suspects or notes.
+                  Moving from your phone to laptop, or switching browsers? Save this link so you never lose your eliminated suspects, clues, or notes.
                 </p>
               </div>
 
               {/* Primary Action: 1-Click Restore Link */}
               <div className="space-y-2">
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-300 block">
-                  1-Click Restore Link
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-300 block">
+                    1-Click Restore Link
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-emerald-400">
+                    corexbooks.com
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -248,16 +318,60 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
                     )}
                   </button>
                 </div>
+
+                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 px-1">
+                  <span className="text-emerald-400/90 font-bold">Official Store: corexbooks.com/pages/investignito</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const netlifyUrl = generateSyncUrl(currentCode, 'https://investignito-v2.netlify.app/');
+                      if (navigator?.clipboard?.writeText) {
+                        navigator.clipboard.writeText(netlifyUrl);
+                      }
+                      setCopiedLink(true);
+                      setTimeout(() => setCopiedLink(false), 3000);
+                    }}
+                    className="text-neutral-400 hover:text-white underline cursor-pointer"
+                    title="Copy direct Netlify link"
+                  >
+                    Copy direct Netlify link
+                  </button>
+                </div>
               </div>
 
-              {/* Quick Email Link to Self */}
+              {/* Action Buttons: Native Share (Mobile) + Email Link */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                {canShare && (
+                  <button
+                    type="button"
+                    onClick={handleNativeShare}
+                    className="py-2.5 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-neutral-500 text-neutral-200 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    <Share2 className="w-4 h-4 text-emerald-400" />
+                    <span>Share via App / AirDrop</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleEmailLink}
+                  className={`py-2.5 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-neutral-500 text-neutral-200 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    !canShare ? 'sm:col-span-2' : ''
+                  }`}
+                >
+                  <Mail className="w-4 h-4 text-red-400" />
+                  <span>Email Link to Myself</span>
+                </button>
+              </div>
+
+              {/* Download JSON Backup File */}
               <button
                 type="button"
-                onClick={handleEmailLink}
-                className="w-full py-2.5 px-4 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-neutral-500 text-neutral-200 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+                onClick={handleDownloadBackupFile}
+                className="w-full py-2.5 px-3 rounded-xl bg-neutral-950 hover:bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
-                <Mail className="w-4 h-4 text-red-400" />
-                <span>Email Progress Link to Myself</span>
+                <FileDown className="w-4 h-4 text-amber-400" />
+                <span>Download Backup File (.json)</span>
               </button>
 
               {/* Collapsible raw backup code */}
@@ -267,7 +381,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
                   onClick={() => setShowRawCode(!showRawCode)}
                   className="text-[11px] font-mono text-neutral-400 hover:text-neutral-200 underline transition-colors cursor-pointer"
                 >
-                  {showRawCode ? 'Hide raw backup code' : 'Prefer a manual backup code? Click here'}
+                  {showRawCode ? 'Hide manual backup code' : 'Prefer a manual backup code? Click here'}
                 </button>
 
                 {showRawCode && (
@@ -303,9 +417,27 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
               </p>
 
               <div className="space-y-2">
-                <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-300 block">
-                  Paste Backup Link or Code
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-300">
+                    Paste Backup Link, Code, or JSON
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-[10px] font-mono font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    <FileUp className="w-3 h-3" />
+                    <span>Upload .json File</span>
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json,application/json,text/plain"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </div>
+
                 <textarea
                   rows={3}
                   value={restoreInput}
@@ -313,10 +445,20 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
                     setRestoreInput(e.target.value);
                     setRestoreError(null);
                   }}
-                  placeholder="Paste link (https://...?restore=INV-...) or code (INV-...)"
+                  placeholder="Paste link (https://...?restore=INV-...), code (INV-...), or upload a .json file"
                   className="w-full bg-black/80 border border-neutral-700 focus:border-red-500 rounded-xl p-3 text-xs font-mono text-neutral-200 placeholder:text-neutral-600 focus:outline-none transition-colors"
                 />
               </div>
+
+              {/* Dynamic preview if valid content entered */}
+              {previewData && !restoreSuccess && (
+                <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-600/50 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fade-in">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>
+                    Valid backup recognized: <strong>{previewCaseCount} case{previewCaseCount > 1 ? 's' : ''}</strong> found ({previewSolvedCount} solved).
+                  </span>
+                </div>
+              )}
 
               {restoreError && (
                 <div className="p-3 rounded-xl bg-red-950/70 border border-red-700/80 text-red-300 text-xs font-mono flex items-center gap-2">

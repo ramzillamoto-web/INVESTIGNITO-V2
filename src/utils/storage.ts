@@ -1,4 +1,5 @@
 import { CaseProgress, ViewMode } from '../types';
+import { mirrorProgressToIndexedDB, broadcastProgressUpdate } from './persistence';
 
 const STORAGE_KEY = 'thornbury_case_1_progress_v2';
 export const STORAGE_VERSION = 1;
@@ -240,8 +241,13 @@ export function saveAllProgress(data: Record<string, CaseProgress>, immediate = 
         lastMeaningfulSignature = currentSig;
         notifySaveListeners();
       }
+      // Dual-layer persistence: mirror to IndexedDB and broadcast to other open tabs
+      mirrorProgressToIndexedDB(pendingSaveData).catch(() => {});
+      broadcastProgressUpdate(pendingSaveData);
     } catch (e) {
       console.warn('Failed to save progress to localStorage (quota or private mode):', e);
+      // Still attempt to save to IndexedDB even if localStorage failed (e.g. quota limit exceeded)
+      mirrorProgressToIndexedDB(pendingSaveData).catch(() => {});
     }
     saveTimeout = null;
   };
@@ -323,6 +329,24 @@ export function parseSyncCode(input: string): Record<string, CaseProgress> | nul
   if (!input || typeof input !== 'string') return null;
   try {
     let raw = input.trim();
+
+    // Check if input is directly raw JSON
+    if (raw.startsWith('{') && raw.endsWith('}')) {
+      try {
+        const directParsed = JSON.parse(raw);
+        if (directParsed && typeof directParsed === 'object') {
+          const directCases = directParsed.cases || directParsed.c || directParsed;
+          const directMigrated = migrateStorageData({ version: STORAGE_VERSION, cases: directCases });
+          if (Object.keys(directMigrated).length > 0) {
+            return sanitizeParsedCases(directMigrated);
+          }
+        }
+      } catch {
+        // Fall back to URL or base64 decoding
+      }
+    }
+
+    // Handle full URLs or query strings
     if (raw.includes('?')) {
       const urlQuery = raw.split('?')[1] || '';
       const params = new URLSearchParams(urlQuery);
@@ -332,9 +356,21 @@ export function parseSyncCode(input: string): Record<string, CaseProgress> | nul
       }
     }
 
+    // URL-decode if needed
+    try {
+      if (raw.includes('%')) {
+        raw = decodeURIComponent(raw);
+      }
+    } catch {
+      // ignore
+    }
+
     if (raw.startsWith('INV-')) {
       raw = raw.substring(4);
     }
+
+    // Strip any whitespace or linebreaks
+    raw = raw.replace(/\s+/g, '');
 
     const decodedStr = decodeURIComponent(
       Array.prototype.map
@@ -346,47 +382,53 @@ export function parseSyncCode(input: string): Record<string, CaseProgress> | nul
     const cases = parsed.c || parsed.cases || parsed;
     const migrated = migrateStorageData({ version: STORAGE_VERSION, cases });
 
-    const sanitized: Record<string, CaseProgress> = {};
-    for (const [key, item] of Object.entries(migrated)) {
-      if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
-      const rawItem = item as Record<string, any>;
-      const validStatus =
-        rawItem.status === 'solved' || rawItem.status === 'in_progress' || rawItem.status === 'unsolved'
-          ? rawItem.status
-          : 'unsolved';
-      sanitized[key] = {
-        ...getInitialProgress(key),
-        ...rawItem,
-        caseId: typeof rawItem.caseId === 'string' && rawItem.caseId ? rawItem.caseId : key,
-        status: validStatus,
-        markings:
-          rawItem.markings && typeof rawItem.markings === 'object' && !Array.isArray(rawItem.markings)
-            ? rawItem.markings
-            : {},
-        markingColors:
-          rawItem.markingColors && typeof rawItem.markingColors === 'object' && !Array.isArray(rawItem.markingColors)
-            ? rawItem.markingColors
-            : {},
-        checkedClues: Array.isArray(rawItem.checkedClues) ? rawItem.checkedClues : [],
-        notes: typeof rawItem.notes === 'string' ? rawItem.notes : '',
-        elapsedSeconds:
-          typeof rawItem.elapsedSeconds === 'number' && !isNaN(rawItem.elapsedSeconds) && isFinite(rawItem.elapsedSeconds)
-            ? Math.max(0, rawItem.elapsedSeconds)
-            : 0,
-      };
-    }
-
-    return Object.keys(sanitized).length > 0 ? sanitized : null;
+    return sanitizeParsedCases(migrated);
   } catch (e) {
     console.warn('Failed to parse sync code or payload:', e);
     return null;
   }
 }
 
-export function generateSyncUrl(code: string): string {
-  if (typeof window === 'undefined') return '';
-  const base = window.location.origin + window.location.pathname;
-  return `${base}?restore=${encodeURIComponent(code)}`;
+function sanitizeParsedCases(migrated: Record<string, unknown>): Record<string, CaseProgress> | null {
+  const sanitized: Record<string, CaseProgress> = {};
+  for (const [key, item] of Object.entries(migrated)) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    const rawItem = item as Record<string, any>;
+    const validStatus =
+      rawItem.status === 'solved' || rawItem.status === 'in_progress' || rawItem.status === 'unsolved'
+        ? rawItem.status
+        : 'unsolved';
+    sanitized[key] = {
+      ...getInitialProgress(key),
+      ...rawItem,
+      caseId: typeof rawItem.caseId === 'string' && rawItem.caseId ? rawItem.caseId : key,
+      status: validStatus,
+      markings:
+        rawItem.markings && typeof rawItem.markings === 'object' && !Array.isArray(rawItem.markings)
+          ? rawItem.markings
+          : {},
+      markingColors:
+        rawItem.markingColors && typeof rawItem.markingColors === 'object' && !Array.isArray(rawItem.markingColors)
+          ? rawItem.markingColors
+          : {},
+      checkedClues: Array.isArray(rawItem.checkedClues) ? rawItem.checkedClues : [],
+      notes: typeof rawItem.notes === 'string' ? rawItem.notes : '',
+      elapsedSeconds:
+        typeof rawItem.elapsedSeconds === 'number' && !isNaN(rawItem.elapsedSeconds) && isFinite(rawItem.elapsedSeconds)
+          ? Math.max(0, rawItem.elapsedSeconds)
+          : 0,
+    };
+  }
+
+  return Object.keys(sanitized).length > 0 ? sanitized : null;
+}
+
+export const OFFICIAL_RESTORE_BASE_URL = 'https://corexbooks.com/pages/investignito/';
+
+export function generateSyncUrl(code: string, customBaseUrl?: string): string {
+  const base = customBaseUrl || OFFICIAL_RESTORE_BASE_URL;
+  const separator = base.includes('?') ? '&' : '?';
+  return `${base}${separator}restore=${encodeURIComponent(code)}`;
 }
 
 export { COOLDOWN_DURATION_MS };

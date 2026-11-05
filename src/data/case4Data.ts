@@ -78,9 +78,9 @@ export const CASE_4_CLUES: Clue[] = [
     number: 1,
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
-    title: 'Letter Check',
-    clueText: 'NAME CONTAINS AN "R"',
-    logicRule: 'Eliminate any name that does not contain the letter R',
+    title: 'No O',
+    clueText: 'NAME CONTAINS NO "O"',
+    logicRule: 'Eliminate any name that contains the letter O',
     evidenceType: 'forensic'
   },
   {
@@ -88,9 +88,9 @@ export const CASE_4_CLUES: Clue[] = [
     number: 2,
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
-    title: 'No E',
-    clueText: 'NAME CONTAINS NO "E"',
-    logicRule: 'Eliminate any name that contains the letter E',
+    title: 'No S',
+    clueText: 'NAME CONTAINS NO "S"',
+    logicRule: 'Eliminate any name that contains the letter S',
     evidenceType: 'physical'
   },
   {
@@ -98,9 +98,9 @@ export const CASE_4_CLUES: Clue[] = [
     number: 3,
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
-    title: 'Double Letter',
-    clueText: 'NAME HAS A DOUBLE LETTER (SAME LETTER TWICE IN A ROW)',
-    logicRule: 'Eliminate any name without a double letter twice in a row',
+    title: 'Name Length',
+    clueText: 'NAME HAS 5 OR MORE LETTERS',
+    logicRule: 'Eliminate any name with fewer than 5 letters',
     evidenceType: 'forensic'
   },
   {
@@ -108,9 +108,9 @@ export const CASE_4_CLUES: Clue[] = [
     number: 4,
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
-    title: 'Column Rule',
-    clueText: 'NAME IS IN COLUMN 2 OR 3',
-    logicRule: 'Eliminate any name not positioned in Column 2 or Column 3',
+    title: 'Letter A',
+    clueText: 'NAME CONTAINS AN "A"',
+    logicRule: 'Eliminate any name that does not contain the letter A',
     evidenceType: 'timeline'
   },
   {
@@ -118,9 +118,9 @@ export const CASE_4_CLUES: Clue[] = [
     number: 5,
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
-    title: 'Row Rule',
-    clueText: 'ROW NUMBER = NUMBER OF LETTERS IN NAME',
-    logicRule: 'Eliminate any name where the row number does not equal the letter count',
+    title: 'Column Rule',
+    clueText: 'NAME IS NOT IN COLUMN 4',
+    logicRule: 'Eliminate any name in Column 4',
     evidenceType: 'timeline'
   },
   {
@@ -129,8 +129,8 @@ export const CASE_4_CLUES: Clue[] = [
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
     title: 'Neighbour Rule',
-    clueText: 'THE NAME DIRECTLY ABOVE STARTS WITH THE SAME LETTER (ROW 1 = CROSS, CROSSED NAMES COUNT)',
-    logicRule: 'Eliminate any name unless the name directly above starts with the same letter (Row 1 eliminated)',
+    clueText: 'THE NAME DIRECTLY ABOVE CONTAINS AN "E"',
+    logicRule: 'Eliminate any name unless the name directly above it contains the letter E',
     evidenceType: 'physical'
   },
   {
@@ -139,8 +139,8 @@ export const CASE_4_CLUES: Clue[] = [
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
     title: 'Uniqueness Rule',
-    clueText: 'NAME APPEARS ONLY ONCE IN THE WHOLE LEDGER (ALL 15 PAGES, CROSSED NAMES INCLUDED)',
-    logicRule: 'Eliminate any name that appears more than once across the 15-page ledger',
+    clueText: 'NAME APPEARS ONLY ONCE IN THE WHOLE LEDGER',
+    logicRule: 'Eliminate any name that appears more than once in the ledger',
     evidenceType: 'registry'
   }
 ];
@@ -172,7 +172,7 @@ export const CASE_4_DATA: CaseData = {
   title: 'The Pendulum Over Blackwood Spire',
   tagline: 'A locked clocktower vault, thirteen midnight chimes, and 900 guild names',
   difficulty: 'Mastermind',
-  estimatedTime: '1-2 hours',
+  estimatedTime: '2-4 hours',
   dateAdded: 'Mastermind Case',
   victim: 'Archibald Blackwood (Grand Horologist & Guildmaster)',
   setting:
@@ -187,14 +187,14 @@ export const CASE_4_DATA: CaseData = {
   namesPerPage: 60,
   suspects: CASE_4_SUSPECTS,
   solution: {
-    killerName: 'Woodrow',
-    killerPage: 11,
-    row: 7,
-    col: 3,
+    killerName: 'Gerald',
+    killerPage: 9,
+    row: 8,
+    col: 2,
     motive: 'Sabotaged the master pendulum gear to seize the Blackwood Horological Guild patents.',
-    gridLocation: 'Page 11, Row 7, Column 3 (R7:C3)'
+    gridLocation: 'Page 9, Row 8, Column 2 (R8:C2)'
   },
   solutionBrief:
-    'Woodrow wedged a custom-ground brass tooth into the deadbeat escapement at 11:59 PM to induce an escapement jump, causing the 13th chime and sabotaging Archibald Blackwood.',
+    'Gerald wedged a custom-ground brass tooth into the deadbeat escapement at 11:59 PM to induce an escapement jump, causing the 13th chime and sabotaging Archibald Blackwood.',
   imageUrl: case4Image
 };
