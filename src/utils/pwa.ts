@@ -33,26 +33,13 @@ export function registerServiceWorker(): Promise<ServiceWorkerRegistration | nul
     return Promise.resolve(null);
   }
 
-  // Safety check: in dev/preview environments, always unregister to prevent white screens
-  const isDevOrPreview =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname.includes('run.app') ||
-    window.location.hostname.includes('webcontainer') ||
-    window.location.port !== '';
-
-  if (isDevOrPreview) {
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      for (const reg of registrations) {
-        reg.unregister();
-      }
-    });
-    return Promise.resolve(null);
-  }
-
   return navigator.serviceWorker
     .register('/sw.js')
     .then((registration) => {
       console.log('[PWA] Service Worker registered with scope:', registration.scope);
+      if (registration.waiting) {
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
       return registration;
     })
     .catch((error) => {

@@ -7,9 +7,21 @@ export interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 
+// Module-level cache for beforeinstallprompt in case it fires before React mounts
+let globalDeferredPrompt: BeforeInstallPromptEvent | null = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e: Event) => {
+    e.preventDefault();
+    globalDeferredPrompt = e as BeforeInstallPromptEvent;
+  });
+}
+
 export function useAddToDevice() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isStandalone, setIsStandalone] = useState<boolean>(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(
+    () => globalDeferredPrompt
+  );
+  const [isStandalone, setIsStandalone] = useState<boolean>(() => isStandalonePWA());
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -17,13 +29,19 @@ export function useAddToDevice() {
 
     setIsStandalone(isStandalonePWA());
 
+    if (globalDeferredPrompt && !deferredPrompt) {
+      setDeferredPrompt(globalDeferredPrompt);
+    }
+
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
+      globalDeferredPrompt = e as BeforeInstallPromptEvent;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
     const handleAppInstalled = () => {
       setIsStandalone(true);
+      globalDeferredPrompt = null;
       setDeferredPrompt(null);
       setIsModalOpen(false);
     };
@@ -35,16 +53,19 @@ export function useAddToDevice() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const triggerAddToDevice = useCallback(async () => {
+    const promptEvent = deferredPrompt || globalDeferredPrompt;
+
     // If the browser provides a native automated prompt (e.g. Chrome on Android or Desktop)
-    if (deferredPrompt && !isStandalone) {
+    if (promptEvent && !isStandalone) {
       try {
-        await deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
+        await promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
         if (choice && choice.outcome === 'accepted') {
           setIsStandalone(true);
+          globalDeferredPrompt = null;
           setDeferredPrompt(null);
           return;
         }
@@ -53,8 +74,31 @@ export function useAddToDevice() {
       }
     }
 
-    // If native prompt is unavailable (like on iOS Safari) or was cancelled, open the clear step-by-step instructions
+    // If native prompt is unavailable (like on iOS Safari) or was dismissed, open the clear step-by-step instructions
     setIsModalOpen(true);
+  }, [deferredPrompt, isStandalone]);
+
+  const installApp = useCallback(async (): Promise<'accepted' | 'dismissed' | 'manual'> => {
+    const promptEvent = deferredPrompt || globalDeferredPrompt;
+
+    if (promptEvent && !isStandalone) {
+      try {
+        await promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          setIsStandalone(true);
+          globalDeferredPrompt = null;
+          setDeferredPrompt(null);
+          return 'accepted';
+        }
+        return 'dismissed';
+      } catch (err) {
+        console.warn('Native install prompt error:', err);
+      }
+    }
+
+    setIsModalOpen(true);
+    return 'manual';
   }, [deferredPrompt, isStandalone]);
 
   const closeModal = useCallback(() => {
@@ -66,10 +110,11 @@ export function useAddToDevice() {
   }, []);
 
   return {
-    deferredPrompt,
+    deferredPrompt: deferredPrompt || globalDeferredPrompt,
     isStandalone,
     isModalOpen,
     triggerAddToDevice,
+    installApp,
     openModal,
     closeModal,
   };

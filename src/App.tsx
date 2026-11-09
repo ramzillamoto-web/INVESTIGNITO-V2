@@ -36,6 +36,7 @@ import { OutroVideo } from './components/OutroVideo';
 import { applyCaseVersionResets } from './utils/caseVersions';
 import { ENABLE_ADD_TO_DEVICE } from './config/features';
 import { InstalledAppNotice } from './components/InstalledAppNotice';
+import { InstallPromptToast } from './components/InstallPromptToast';
 
 export default function App() {
   // Add to Device state and prompt handling
@@ -548,6 +549,15 @@ export default function App() {
         }}
         onDismiss={handleDismissSyncCallout}
       />
+
+      {/* In-App Install Notification for Android, iOS & Desktop */}
+      {ENABLE_ADD_TO_DEVICE && (
+        <InstallPromptToast
+          deferredPrompt={deferredPrompt}
+          isStandalone={isStandalone}
+          onOpenGuide={triggerAddToDevice}
+        />
+      )}
     </div>
   );
 }

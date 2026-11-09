@@ -5,11 +5,12 @@
   "start_url": "/",
   "id": "/",
   "scope": "/",
-  "display": "fullscreen",
-  "display_override": ["fullscreen", "standalone", "minimal-ui", "window-controls-overlay"],
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "orientation": "any",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "background_color": "#060608",
+  "theme_color": "#060608",
+  "prefer_related_applications": false,
   "categories": ["games", "entertainment", "puzzles"],
   "icons": [
     {
