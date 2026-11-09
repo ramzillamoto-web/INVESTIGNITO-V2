@@ -1,12 +1,13 @@
-const crypto = require('crypto');
+import crypto from 'crypto';
+import { getStore } from '@netlify/blobs';
 
 /**
  * Netlify Serverless Function: sync-progress
  * 
- * Handles authenticated cloud saves and loads for Shopify customer accounts.
- * Verifies HMAC SHA-256 signature generated with PROGRESS_SIGNING_SECRET.
+ * Persistent cloud save and load for Shopify customer accounts powered by @netlify/blobs.
+ * Verifies HMAC SHA-256 signature against process.env.PROGRESS_SIGNING_SECRET.
  */
-exports.handler = async (event) => {
+export const handler = async (event) => {
   // 1. CORS Headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -101,36 +102,50 @@ exports.handler = async (event) => {
       };
     }
 
-    // 7. Handle GET (Load user progress)
+    // 7. Access Netlify Blobs store
+    const saves = getStore('user-progress');
+    const storageKey = `save_${customerId}`;
+
+    // 8. Handle GET (Retrieve user progress)
     if (event.httpMethod === 'GET') {
-      // In production, fetch the stored save state for customerId from database (e.g., Firestore, Supabase, Redis)
+      const storedProgress = await saves.get(storageKey, { type: 'json' });
+
+      if (!storedProgress) {
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            progressData: null,
+          }),
+        };
+      }
+
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({
           success: true,
-          customerId: String(customerId),
-          progressData: {}, // Returns stored save state (or empty state if first time)
+          progressData: storedProgress,
         }),
       };
     }
 
-    // 8. Handle POST (Save user progress)
+    // 9. Handle POST (Persist user progress)
     if (event.httpMethod === 'POST') {
-      // In production, upsert progressData for customerId in database
+      await saves.setJSON(storageKey, progressData);
+
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({
           success: true,
-          message: 'Progress saved',
-          customerId: String(customerId),
-          timestamp: Date.now(),
+          message: 'Progress saved successfully',
         }),
       };
     }
   } catch (error) {
-    console.error('[sync-progress] Unhandled server error:', error);
+    console.error('[sync-progress] Server error:', error);
     return {
       statusCode: 500,
       headers,
