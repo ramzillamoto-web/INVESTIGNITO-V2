@@ -37,7 +37,12 @@ import { applyCaseVersionResets } from './utils/caseVersions';
 import { ENABLE_ADD_TO_DEVICE } from './config/features';
 import { InstalledAppNotice } from './components/InstalledAppNotice';
 import { InstallPromptToast } from './components/InstallPromptToast';
-import { loadUserProgress, saveUserProgress } from './utils/shopifyCloudSync';
+import {
+  getUserSession,
+  UserSession,
+} from './utils/playerAuth';
+import { AuthModal } from './components/AuthModal';
+import { useCloudSave } from './hooks/useCloudSave';
 
 export default function App() {
   // Add to Device state and prompt handling
@@ -88,6 +93,10 @@ export default function App() {
   const [unlockedCaseBanner, setUnlockedCaseBanner] = useState<string | null>(null);
   const [showSavedIndicator, setShowSavedIndicator] = useState<boolean>(false);
 
+  // Detective account & authentication state
+  const [userSession, setUserSession] = useState<UserSession | null>(() => getUserSession());
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+
   // In-App browser banner state (Instagram, TikTok, Facebook, etc.)
   const [showInAppBanner, setShowInAppBanner] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -137,72 +146,35 @@ export default function App() {
     }
   };
 
-  // Save protection: true only after initial loadUserProgress() check completes
-  const [isCloudSyncReady, setIsCloudSyncReady] = useState<boolean>(false);
-  const isCloudSyncReadyRef = useRef<boolean>(false);
-
-  // 1. Initial Cloud Sync on App Mount with Save Protection
+  // Initialize Persistent Storage & Cross-Tab Sync
   useEffect(() => {
-    let isCancelled = false;
-
-    async function initializeGameSaves() {
-      try {
-        initPersistentStorage();
-
-        // 1. Attempt to load from Netlify Cloud via Shopify customer credentials
-        const cloudData = await loadUserProgress();
-
-        const hasValidCloudData =
-          cloudData &&
-          typeof cloudData === 'object' &&
-          !Array.isArray(cloudData) &&
-          Object.keys(cloudData).length > 0;
-
-        if (hasValidCloudData && !isCancelled) {
-          console.log('[CloudSync] Found valid cloud save. Syncing to local device...');
-          const { updated } = applyCaseVersionResets(cloudData);
-          setAllProgress(updated);
-          saveAllProgress(updated, true);
-          setShowSavedIndicator(true);
-        } else if (!isCancelled) {
-          console.log('[CloudSync] No cloud save found or guest mode. Retaining local save.');
-
-          // 2. Disaster Recovery: Check if IndexedDB has backup if localStorage was cleared
-          const hasLocalData = Object.values(allProgressRef.current).some(
-            (p) => p.status !== 'unsolved' || (p.markings && Object.keys(p.markings).length > 0)
-          );
-
-          if (!hasLocalData) {
-            const backupCases = await checkAndRecoverFromIndexedDB();
-            if (backupCases && Object.keys(backupCases).length > 0 && !isCancelled) {
-              setAllProgress(backupCases);
-              saveAllProgress(backupCases, true);
-              setShowSavedIndicator(true);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('[CloudSync] Error during initial cloud load, falling back to local save:', err);
-      } finally {
-        if (!isCancelled) {
-          isCloudSyncReadyRef.current = true;
-          setIsCloudSyncReady(true);
-        }
-      }
-    }
-
-    initializeGameSaves();
-
-    // 3. Multi-Tab / Cross-Window Synchronization (BroadcastChannel + storage events)
+    initPersistentStorage();
     const unsubscribeSync = initCrossTabSync((remoteCases) => {
       setAllProgress(remoteCases);
     });
-
     return () => {
-      isCancelled = true;
       unsubscribeSync();
     };
   }, []);
+
+  // Hook in Netlify Cloud Save (Locked until initial cloud fetch succeeds, 5-second interval loop, immediate triggers)
+  const { isCloudLoaded, triggerImmediateSave } = useCloudSave({
+    userSession,
+    allProgress,
+    setAllProgress,
+    onSaveNotification: () => {
+      setShowSavedIndicator(true);
+    },
+  });
+
+  // Sync with localStorage (Strict Save Protection: blocked until initial cloud load completes)
+  useEffect(() => {
+    if (!isCloudLoaded) return;
+    saveAllProgress(allProgress);
+  }, [allProgress, isCloudLoaded]);
+
+  const allProgressRef = useRef(allProgress);
+  allProgressRef.current = allProgress;
 
   // Auto-detect 1-click restore link in URL (?restore=... or ?sync=...)
   useEffect(() => {
@@ -222,63 +194,43 @@ export default function App() {
     }
   }, []);
 
-  const handleRestoreProgress = (restored: Record<string, CaseProgress>) => {
-    setAllProgress(restored);
-    saveAllProgress(restored, true);
-    if (isCloudSyncReadyRef.current) {
-      saveUserProgress(restored).catch(() => {});
+  const handleAuthSuccess = (session: UserSession, cloudProgress?: any) => {
+    setUserSession(session);
+    setShowAuthModal(false);
+
+    if (cloudProgress && typeof cloudProgress === 'object' && Object.keys(cloudProgress).length > 0) {
+      const { updated } = applyCaseVersionResets(cloudProgress);
+      setAllProgress(updated);
+      saveAllProgress(updated, true);
+    } else {
+      triggerImmediateSave(allProgressRef.current);
     }
     setShowSavedIndicator(true);
   };
 
-  // Sync with localStorage (Save Protection: disabled until initial cloud sync completes)
-  useEffect(() => {
-    if (!isCloudSyncReady) return;
-    saveAllProgress(allProgress);
-  }, [allProgress, isCloudSyncReady]);
+  const handleLogout = () => {
+    setUserSession(null);
+    setShowAuthModal(true);
+  };
 
-  // Background Cloud Auto-Save (debounced by 1.2s to prevent excessive network calls)
-  useEffect(() => {
-    if (!isCloudSyncReady) return;
-
-    const timer = setTimeout(() => {
-      saveUserProgress(allProgress).catch((err) => {
-        console.warn('[CloudSync] Background save error:', err);
-      });
-    }, 1200);
-
-    return () => clearTimeout(timer);
-  }, [allProgress, isCloudSyncReady]);
-
-  // Save immediately when page is hidden, closed, or frozen (visibilitychange, pagehide, beforeunload, freeze)
-  const allProgressRef = useRef(allProgress);
-  allProgressRef.current = allProgress;
+  const handleRestoreProgress = (restored: Record<string, CaseProgress>) => {
+    setAllProgress(restored);
+    saveAllProgress(restored, true);
+    triggerImmediateSave(restored);
+    setShowSavedIndicator(true);
+  };
 
   useEffect(() => {
-    const handleSaveImmediately = () => {
-      if (!isCloudSyncReadyRef.current) return;
+    const handleFreezeSave = () => {
       saveAllProgress(allProgressRef.current, true);
-      saveUserProgress(allProgressRef.current).catch(() => {});
+      triggerImmediateSave();
     };
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        handleSaveImmediately();
-      }
-    };
-
-    window.addEventListener('pagehide', handleSaveImmediately);
-    window.addEventListener('beforeunload', handleSaveImmediately);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('freeze', handleSaveImmediately);
-
+    window.addEventListener('freeze', handleFreezeSave);
     return () => {
-      window.removeEventListener('pagehide', handleSaveImmediately);
-      window.removeEventListener('beforeunload', handleSaveImmediately);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('freeze', handleSaveImmediately);
+      window.removeEventListener('freeze', handleFreezeSave);
     };
-  }, []);
+  }, [triggerImmediateSave]);
 
   // Brief "Progress saved" indicator on saves
   useEffect(() => {
@@ -317,16 +269,19 @@ export default function App() {
 
   const handleResetCase = () => {
     const fresh = getInitialProgress(selectedCase.id);
-    setAllProgress((prevAll) => ({
-      ...prevAll,
+    const updated = {
+      ...allProgressRef.current,
       [selectedCase.id]: fresh,
-    }));
+    };
+    setAllProgress(updated);
+    triggerImmediateSave(updated);
     setShowCongratulationsModal(false);
     setShowCooldownModal(false);
     setShowOutro(false);
   };
 
   const handleSolveCase = () => {
+    triggerImmediateSave();
     const hasOutro = Boolean(CASE_OUTROS[selectedCase.id]);
     const alreadySeen = hasSeenOutro(selectedCase.id);
     const skipAuto = shouldSkipAutomaticOutro();
@@ -458,6 +413,8 @@ export default function App() {
           setSyncModalMode('backup');
           setShowSyncModal(true);
         }}
+        onOpenAuth={() => setShowAuthModal(true)}
+        currentDetectiveName={userSession?.username || null}
         isStandalone={isStandalone}
       />
 
@@ -479,6 +436,8 @@ export default function App() {
               setSyncModalMode('backup');
               setShowSyncModal(true);
             }}
+            onOpenAuth={() => setShowAuthModal(true)}
+            currentDetectiveName={userSession?.username || null}
             isStandalone={isStandalone}
           />
         )}
@@ -581,6 +540,18 @@ export default function App() {
         onRestoreProgress={handleRestoreProgress}
         initialMode={syncModalMode}
         incomingCode={incomingSyncCode}
+      />
+
+      {/* Forced In-App Authentication & Detective Account Modal */}
+      <AuthModal
+        isOpen={!userSession || showAuthModal}
+        onClose={() => {
+          if (userSession) setShowAuthModal(false);
+        }}
+        currentSession={userSession}
+        onAuthSuccess={handleAuthSuccess}
+        onLogout={handleLogout}
+        currentProgress={allProgress}
       />
 
       {/* Unobtrusive "Progress saved" indicator */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, ChevronLeft, HelpCircle, Maximize2, Minimize2, CreditCard, Smartphone, Check, FolderSync } from 'lucide-react';
+import { Clock, ChevronLeft, HelpCircle, Maximize2, Minimize2, CreditCard, Smartphone, Check, FolderSync, User, Shield } from 'lucide-react';
 import { ViewMode, CaseData, CaseProgress } from '../types';
 import { formatTime } from '../utils/storage';
 import { InvestignitoLogo } from './InvestignitoLogo';
@@ -15,6 +15,8 @@ interface NavbarProps {
   onOpenSubscription?: () => void;
   onAddToDevice?: () => void;
   onOpenSync?: () => void;
+  onOpenAuth?: () => void;
+  currentDetectiveName?: string | null;
   isStandalone?: boolean;
 }
 
@@ -27,6 +29,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSubscription,
   onAddToDevice,
   onOpenSync,
+  onOpenAuth,
+  currentDetectiveName,
   isStandalone,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
@@ -199,6 +203,33 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
+            {/* Detective Account / Login (Case Detail View) */}
+            {onOpenAuth && (
+              <button
+                type="button"
+                onClick={onOpenAuth}
+                className={`flex items-center justify-center gap-1.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg sm:rounded border transition-all cursor-pointer shadow-sm shrink-0 ${
+                  currentDetectiveName
+                    ? 'bg-neutral-900/90 border-emerald-500/60 text-emerald-300 hover:border-emerald-400'
+                    : 'bg-neutral-900/90 border-neutral-700 text-neutral-300 hover:text-white hover:border-red-500'
+                }`}
+                title={currentDetectiveName ? `Detective: ${currentDetectiveName}` : 'Detective Login / Cloud Save'}
+                aria-label="Detective Account"
+              >
+                {currentDetectiveName ? (
+                  <Shield className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                ) : (
+                  <User className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                )}
+                <span className="hidden xl:inline truncate max-w-[100px]">
+                  {currentDetectiveName ? currentDetectiveName : 'Log In'}
+                </span>
+                {currentDetectiveName && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse hidden sm:inline-block" />
+                )}
+              </button>
+            )}
+
             {/* Field Rules / Help - 44px tap target icon on mobile, labeled on desktop */}
             <button
               onClick={() => onOpenHelp()}
@@ -258,6 +289,33 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 <FolderSync className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.9)] group-hover:scale-110 transition-transform" />
                 <span className="hidden sm:inline group-hover:text-emerald-300 transition-colors">Sync / Backup</span>
+              </button>
+            )}
+
+            {/* Detective Account / Login (Landing View) */}
+            {onOpenAuth && (
+              <button
+                type="button"
+                onClick={onOpenAuth}
+                className={`flex items-center justify-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded border transition-all cursor-pointer shadow-sm shrink-0 group ${
+                  currentDetectiveName
+                    ? 'bg-neutral-900/90 border-emerald-500/60 text-emerald-300 hover:border-emerald-400 shadow-emerald-950/40'
+                    : 'bg-neutral-900/90 border-neutral-700 text-neutral-200 hover:text-white hover:border-red-500'
+                }`}
+                title={currentDetectiveName ? `Detective Call Sign: ${currentDetectiveName}` : 'Detective Login / Cloud Save'}
+                aria-label="Detective Account"
+              >
+                {currentDetectiveName ? (
+                  <Shield className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" />
+                ) : (
+                  <User className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-neutral-400 group-hover:text-red-400 shrink-0 transition-colors" />
+                )}
+                <span className="hidden sm:inline truncate max-w-[120px]">
+                  {currentDetectiveName ? currentDetectiveName : 'Log In'}
+                </span>
+                {currentDetectiveName && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                )}
               </button>
             )}
 

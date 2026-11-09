@@ -19,6 +19,7 @@ import {
   Check,
   FolderSync,
   Sparkles,
+  User,
 } from 'lucide-react';
 import { CaseData, CaseProgress } from '../types';
 import { formatTime } from '../utils/storage';
@@ -34,6 +35,8 @@ interface LandingViewProps {
   onOpenSubscription?: () => void;
   onAddToDevice?: () => void;
   onOpenSync?: () => void;
+  onOpenAuth?: () => void;
+  currentDetectiveName?: string | null;
   isStandalone?: boolean;
 }
 
@@ -46,6 +49,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
   onOpenSubscription,
   onAddToDevice,
   onOpenSync,
+  onOpenAuth,
+  currentDetectiveName,
   isStandalone,
 }) => {
   // Map of caseId -> boolean to track expanded "See Details" independently for each case
@@ -210,6 +215,31 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 >
                   <Smartphone className="w-3 h-3 text-red-500 shrink-0" />
                   <span>{isStandalone ? 'Installed on Device ✓' : 'Add to Device for full-screen play'}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Detective Account Cloud Status Callout */}
+            {onOpenAuth && (
+              <div className="mt-1 text-center">
+                <button
+                  type="button"
+                  onClick={onOpenAuth}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-mono text-neutral-400 hover:text-white transition-colors py-0.5 px-2 cursor-pointer touch-manipulation active:scale-95"
+                >
+                  {currentDetectiveName ? (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-emerald-300 font-bold">Detective: {currentDetectiveName}</span>
+                      <span className="text-neutral-500">• Cloud Sync Active</span>
+                    </>
+                  ) : (
+                    <>
+                      <User className="w-3 h-3 text-red-500" />
+                      <span className="underline hover:text-red-400 text-neutral-300">Log In / Create Badge</span>
+                      <span className="text-neutral-500">to sync progress across devices</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
