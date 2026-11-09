@@ -9,6 +9,8 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  MoreVertical,
+  ExternalLink,
 } from 'lucide-react';
 import { InvestignitoLogo } from './InvestignitoLogo';
 import { isIos, isAndroid } from '../utils/pwa';
@@ -29,7 +31,7 @@ export const InstallPromptToast: React.FC<InstallPromptToastProps> = ({
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const [isIOSDevice, setIsIOSDevice] = useState<boolean>(false);
   const [isAndroidDevice, setIsAndroidDevice] = useState<boolean>(false);
-  const [showIOSSteps, setShowIOSSteps] = useState<boolean>(false);
+  const [showSteps, setShowSteps] = useState<boolean>(false);
   const [installing, setInstalling] = useState<boolean>(false);
   const [justInstalled, setJustInstalled] = useState<boolean>(false);
 
@@ -53,10 +55,10 @@ export const InstallPromptToast: React.FC<InstallPromptToastProps> = ({
     setIsIOSDevice(isIos());
     setIsAndroidDevice(isAndroid());
 
-    // Delay prompt appearance by 2.5s for seamless UX
+    // Delay prompt appearance by 2 seconds for a seamless experience
     const timer = setTimeout(() => {
       setIsVisible(true);
-    }, 2500);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, [isStandalone]);
@@ -159,14 +161,51 @@ export const InstallPromptToast: React.FC<InstallPromptToastProps> = ({
           {/* Subtitle text */}
           <p className="text-[11px] sm:text-xs text-neutral-300 leading-relaxed mb-3">
             {isIOSDevice
-              ? 'Add INVESTIGNITO to your iPhone/iPad Home Screen for immersive full-screen play with zero browser bars.'
+              ? 'Add INVESTIGNITO to your iPhone/iPad Home Screen for full-screen cases with zero browser bars.'
               : isAndroidDevice
-              ? 'Install as a native home-screen app on Android for fast offline loading and distraction-free solving.'
+              ? 'Add INVESTIGNITO to your Android Home Screen for 1-tap quick play and full-screen cases.'
               : 'Install the web app to your computer or home screen for full-screen detective cases.'}
           </p>
 
-          {/* iOS Quick Steps Dropdown */}
-          {isIOSDevice && showIOSSteps && (
+          {/* Android Quick Steps Accordion */}
+          {isAndroidDevice && showSteps && (
+            <div className="mb-3 p-3 rounded-xl bg-neutral-900/90 border border-neutral-700 space-y-2 text-xs animate-fade-in">
+              <div className="flex items-start gap-2.5 text-neutral-200">
+                <div className="w-5 h-5 rounded bg-amber-950 border border-amber-600 flex items-center justify-center text-amber-400 shrink-0 font-mono font-black text-[10px]">
+                  1
+                </div>
+                <div className="leading-snug">
+                  Tap Chrome's <strong className="text-white">three dots (⋮)</strong> menu in the top-right corner.
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 text-neutral-200">
+                <div className="w-5 h-5 rounded bg-emerald-950 border border-emerald-600 flex items-center justify-center text-emerald-400 shrink-0 font-mono font-black text-[10px]">
+                  2
+                </div>
+                <div className="leading-snug">
+                  Tap <strong className="text-white">"Add to Home screen"</strong> or <strong className="text-white">"Install app"</strong>.
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 text-neutral-200">
+                <div className="w-5 h-5 rounded bg-red-950 border border-red-600 flex items-center justify-center text-red-400 shrink-0 font-mono font-black text-[10px]">
+                  3
+                </div>
+                <div className="leading-snug">
+                  In the pop-up, tap <strong className="text-white">"Create shortcut"</strong> (below the disabled Install line) and tap <strong className="text-white">Add</strong>!
+                </div>
+              </div>
+
+              <div className="pt-1 text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                <span>The INVESTIGNITO icon will appear on your Home Screen!</span>
+              </div>
+            </div>
+          )}
+
+          {/* iOS Quick Steps Accordion */}
+          {isIOSDevice && showSteps && (
             <div className="mb-3 p-3 rounded-xl bg-neutral-900/90 border border-neutral-700 space-y-2 text-xs animate-fade-in">
               <div className="flex items-start gap-2.5 text-neutral-200">
                 <div className="w-5 h-5 rounded bg-sky-950 border border-sky-600 flex items-center justify-center text-sky-400 shrink-0 font-mono font-black text-[10px]">
@@ -204,12 +243,12 @@ export const InstallPromptToast: React.FC<InstallPromptToastProps> = ({
               <>
                 <button
                   type="button"
-                  onClick={() => setShowIOSSteps((prev) => !prev)}
+                  onClick={() => setShowSteps((prev) => !prev)}
                   className="flex-1 py-2 px-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md active:scale-95"
                 >
                   <Smartphone className="w-3.5 h-3.5" />
-                  <span>{showIOSSteps ? 'Hide Steps' : 'Install on iPhone'}</span>
-                  {showIOSSteps ? (
+                  <span>{showSteps ? 'Hide Steps' : 'Install on iPhone'}</span>
+                  {showSteps ? (
                     <ChevronUp className="w-3.5 h-3.5" />
                   ) : (
                     <ChevronDown className="w-3.5 h-3.5" />
@@ -242,6 +281,30 @@ export const InstallPromptToast: React.FC<InstallPromptToastProps> = ({
                   className="py-2 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-700 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer shrink-0"
                 >
                   Maybe Later
+                </button>
+              </>
+            ) : isAndroidDevice ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowSteps((prev) => !prev)}
+                  className="flex-1 py-2 px-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md active:scale-95"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>{showSteps ? 'Hide Steps' : 'Add to Android'}</span>
+                  {showSteps ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onOpenGuide}
+                  className="py-2 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-700 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer shrink-0"
+                >
+                  Full Guide
                 </button>
               </>
             ) : (

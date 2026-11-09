@@ -255,11 +255,11 @@ export const AddToDeviceModal: React.FC<AddToDeviceModalProps> = ({
                 </div>
                 <div>
                   <div className="text-xs font-bold text-white uppercase tracking-tight flex items-center gap-1.5">
-                    <span>Tap Chrome's Menu</span>
+                    <span>Tap Chrome's Menu (⋮)</span>
                     <MoreVertical className="w-3.5 h-3.5 text-amber-400" />
                   </div>
                   <p className="text-[11px] sm:text-xs text-neutral-300 mt-0.5">
-                    Open Chrome or Samsung Internet, and tap the <strong>three vertical dots (⋮)</strong> menu in the upper-right corner of the browser.
+                    In Chrome on your Android device, tap the <strong>three vertical dots (⋮)</strong> menu in the upper-right corner of the browser.
                   </p>
                 </div>
               </div>
@@ -270,11 +270,11 @@ export const AddToDeviceModal: React.FC<AddToDeviceModalProps> = ({
                 </div>
                 <div>
                   <div className="text-xs font-bold text-white uppercase tracking-tight flex items-center gap-1.5">
-                    <span>Tap "Install app" or "Add to Home screen"</span>
+                    <span>Tap "Add to Home screen" or "Install app"</span>
                     <Download className="w-3.5 h-3.5 text-emerald-400" />
                   </div>
                   <p className="text-[11px] sm:text-xs text-neutral-300 mt-0.5">
-                    Select <strong>Install app</strong> (or <strong>Add to Home screen</strong>) from the browser drop-down list.
+                    Select <strong>Add to Home screen</strong> (or <strong>Install app</strong>) from the browser menu.
                   </p>
                 </div>
               </div>
@@ -284,13 +284,21 @@ export const AddToDeviceModal: React.FC<AddToDeviceModalProps> = ({
                   3
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white uppercase tracking-tight">
-                    Confirm "Install"
+                  <div className="text-xs font-bold text-white uppercase tracking-tight flex items-center gap-1.5">
+                    <span>Select "Create shortcut" if prompted</span>
                   </div>
                   <p className="text-[11px] sm:text-xs text-neutral-300 mt-0.5">
-                    Tap <strong>Install</strong>. INVESTIGNITO will be added to your phone's app drawer and home screen.
+                    If Chrome displays <em>"Install and create shortcut"</em> with <em>"This app cannot be installed"</em> on top, simply tap the active row below it: <strong>"Create shortcut"</strong>, then tap <strong>Add</strong>!
                   </p>
                 </div>
+              </div>
+
+              {/* Android Store Notice */}
+              <div className="p-2.5 rounded-lg bg-neutral-900/90 border border-neutral-700 text-neutral-300 text-[11px] font-mono flex items-start gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Tip:</strong> The home screen shortcut launches the full game directly on your phone with zero typing.
+                </span>
               </div>
             </div>
           )}
