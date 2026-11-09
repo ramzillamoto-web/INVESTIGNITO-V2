@@ -1,3 +1,0 @@
-/*
-  X-Frame-Options: ALLOW-FROM https://corexbooks.com
-  Content-Security-Policy: frame-ancestors 'self' https://corexbooks.com https://*.myshopify.com
