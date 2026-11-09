@@ -37,6 +37,7 @@ import { applyCaseVersionResets } from './utils/caseVersions';
 import { ENABLE_ADD_TO_DEVICE } from './config/features';
 import { InstalledAppNotice } from './components/InstalledAppNotice';
 import { InstallPromptToast } from './components/InstallPromptToast';
+import { loadUserProgress, saveUserProgress } from './utils/shopifyCloudSync';
 
 export default function App() {
   // Add to Device state and prompt handling
@@ -136,33 +137,69 @@ export default function App() {
     }
   };
 
-  // 1. Initialize Persistent Storage API (prohibits iOS/Android overnight eviction)
-  // 2. Disaster Recovery: Check if IndexedDB has backup if localStorage was cleared
-  // 3. Multi-Tab / Cross-Window Synchronization (BroadcastChannel + storage events)
+  // Save protection: true only after initial loadUserProgress() check completes
+  const [isCloudSyncReady, setIsCloudSyncReady] = useState<boolean>(false);
+  const isCloudSyncReadyRef = useRef<boolean>(false);
+
+  // 1. Initial Cloud Sync on App Mount with Save Protection
   useEffect(() => {
-    initPersistentStorage();
+    let isCancelled = false;
 
-    // Check if current in-memory progress is empty, and attempt recovery from IndexedDB
-    const hasMeaningfulData = Object.values(allProgress).some(
-      (p) => p.status !== 'unsolved' || (p.markings && Object.keys(p.markings).length > 0)
-    );
+    async function initializeGameSaves() {
+      try {
+        initPersistentStorage();
 
-    if (!hasMeaningfulData) {
-      checkAndRecoverFromIndexedDB().then((backupCases) => {
-        if (backupCases && Object.keys(backupCases).length > 0) {
-          setAllProgress(backupCases);
-          saveAllProgress(backupCases, true);
+        // 1. Attempt to load from Netlify Cloud via Shopify customer credentials
+        const cloudData = await loadUserProgress();
+
+        const hasValidCloudData =
+          cloudData &&
+          typeof cloudData === 'object' &&
+          !Array.isArray(cloudData) &&
+          Object.keys(cloudData).length > 0;
+
+        if (hasValidCloudData && !isCancelled) {
+          console.log('[CloudSync] Found valid cloud save. Syncing to local device...');
+          const { updated } = applyCaseVersionResets(cloudData);
+          setAllProgress(updated);
+          saveAllProgress(updated, true);
           setShowSavedIndicator(true);
+        } else if (!isCancelled) {
+          console.log('[CloudSync] No cloud save found or guest mode. Retaining local save.');
+
+          // 2. Disaster Recovery: Check if IndexedDB has backup if localStorage was cleared
+          const hasLocalData = Object.values(allProgressRef.current).some(
+            (p) => p.status !== 'unsolved' || (p.markings && Object.keys(p.markings).length > 0)
+          );
+
+          if (!hasLocalData) {
+            const backupCases = await checkAndRecoverFromIndexedDB();
+            if (backupCases && Object.keys(backupCases).length > 0 && !isCancelled) {
+              setAllProgress(backupCases);
+              saveAllProgress(backupCases, true);
+              setShowSavedIndicator(true);
+            }
+          }
         }
-      });
+      } catch (err) {
+        console.warn('[CloudSync] Error during initial cloud load, falling back to local save:', err);
+      } finally {
+        if (!isCancelled) {
+          isCloudSyncReadyRef.current = true;
+          setIsCloudSyncReady(true);
+        }
+      }
     }
 
-    // Subscribe to cross-tab updates so other open tabs never overwrite with stale state
+    initializeGameSaves();
+
+    // 3. Multi-Tab / Cross-Window Synchronization (BroadcastChannel + storage events)
     const unsubscribeSync = initCrossTabSync((remoteCases) => {
       setAllProgress(remoteCases);
     });
 
     return () => {
+      isCancelled = true;
       unsubscribeSync();
     };
   }, []);
@@ -188,13 +225,30 @@ export default function App() {
   const handleRestoreProgress = (restored: Record<string, CaseProgress>) => {
     setAllProgress(restored);
     saveAllProgress(restored, true);
+    if (isCloudSyncReadyRef.current) {
+      saveUserProgress(restored).catch(() => {});
+    }
     setShowSavedIndicator(true);
   };
 
-  // Sync with localStorage
+  // Sync with localStorage (Save Protection: disabled until initial cloud sync completes)
   useEffect(() => {
+    if (!isCloudSyncReady) return;
     saveAllProgress(allProgress);
-  }, [allProgress]);
+  }, [allProgress, isCloudSyncReady]);
+
+  // Background Cloud Auto-Save (debounced by 1.2s to prevent excessive network calls)
+  useEffect(() => {
+    if (!isCloudSyncReady) return;
+
+    const timer = setTimeout(() => {
+      saveUserProgress(allProgress).catch((err) => {
+        console.warn('[CloudSync] Background save error:', err);
+      });
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [allProgress, isCloudSyncReady]);
 
   // Save immediately when page is hidden, closed, or frozen (visibilitychange, pagehide, beforeunload, freeze)
   const allProgressRef = useRef(allProgress);
@@ -202,7 +256,9 @@ export default function App() {
 
   useEffect(() => {
     const handleSaveImmediately = () => {
+      if (!isCloudSyncReadyRef.current) return;
       saveAllProgress(allProgressRef.current, true);
+      saveUserProgress(allProgressRef.current).catch(() => {});
     };
 
     const handleVisibilityChange = () => {

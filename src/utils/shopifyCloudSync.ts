@@ -196,8 +196,10 @@ export async function loadUserProgress(): Promise<any | null> {
 
     if (response.ok) {
       const result = await response.json();
-      // Returns the progressData object stored in the cloud database
-      return result.progressData || result;
+      if (result && result.progressData !== undefined) {
+        return result.progressData;
+      }
+      return result;
     }
 
     if (response.status === 404) {
