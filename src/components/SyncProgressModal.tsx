@@ -3,17 +3,17 @@ import {
   X,
   Copy,
   Check,
-  Mail,
   Smartphone,
-  Share2,
   ShieldCheck,
   AlertTriangle,
   Download,
-  FileDown,
-  FileUp,
+  Link as LinkIcon,
+  ClipboardPaste,
+  Share2,
+  Sparkles,
 } from 'lucide-react';
 import { CaseProgress } from '../types';
-import { generateSyncCode, generateSyncUrl, parseSyncCode, STORAGE_VERSION } from '../utils/storage';
+import { generateSyncCode, generateSyncUrl, parseSyncCode } from '../utils/storage';
 
 interface SyncProgressModalProps {
   isOpen: boolean;
@@ -22,6 +22,52 @@ interface SyncProgressModalProps {
   onRestoreProgress: (restoredData: Record<string, CaseProgress>) => void;
   initialMode?: 'backup' | 'restore';
   incomingCode?: string | null;
+}
+
+/**
+ * Robust clipboard copy function.
+ * Attempts navigator.clipboard.writeText first; if rejected by iframe permissions
+ * or browser policies, seamlessly falls back to document.execCommand('copy').
+ */
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  // 1. Try modern Clipboard API
+  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.warn('navigator.clipboard.writeText rejected (likely iframe permission), using execCommand fallback:', err);
+    }
+  }
+
+  // 2. Fallback: document.execCommand('copy') on temporary textarea
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+    textArea.style.opacity = '0.01';
+    textArea.setAttribute('readonly', '');
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, 99999);
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    if (successful) return true;
+  } catch (err) {
+    console.warn('document.execCommand copy fallback failed:', err);
+  }
+
+  return false;
 }
 
 export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
@@ -38,23 +84,63 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
   const [restoreInput, setRestoreInput] = useState('');
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const [restoreSuccess, setRestoreSuccess] = useState<string | null>(null);
-  const [showRawCode, setShowRawCode] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showConfirmRestore, setShowConfirmRestore] = useState(false);
+  const [autoDetectedBackup, setAutoDetectedBackup] = useState<{
+    data: Record<string, CaseProgress>;
+    count: number;
+    solved: number;
+  } | null>(null);
+
+  const linkInputRef = useRef<HTMLInputElement | null>(null);
+  const codeInputRef = useRef<HTMLInputElement | null>(null);
 
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  // Read clipboard to check for valid backup automatically
+  const checkClipboardAutomatically = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          const parsed = parseSyncCode(text.trim());
+          if (parsed && Object.keys(parsed).length > 0) {
+            const count = Object.keys(parsed).length;
+            const solved = Object.values(parsed).filter((p) => p.status === 'solved').length;
+            setRestoreInput(text.trim());
+            setAutoDetectedBackup({ data: parsed, count, solved });
+            return;
+          }
+        }
+      }
+    } catch {
+      // Permission denied or browser blocked; user can tap manual paste button
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
       if (incomingCode) {
         setActiveTab('restore');
         setRestoreInput(incomingCode);
+        const parsed = parseSyncCode(incomingCode);
+        if (parsed && Object.keys(parsed).length > 0) {
+          const count = Object.keys(parsed).length;
+          const solved = Object.values(parsed).filter((p) => p.status === 'solved').length;
+          setAutoDetectedBackup({ data: parsed, count, solved });
+        }
       } else {
         setActiveTab(initialMode);
+        if (initialMode === 'restore') {
+          checkClipboardAutomatically();
+        }
       }
       setRestoreError(null);
       setRestoreSuccess(null);
+      setShowConfirmRestore(false);
       setCopiedLink(false);
       setCopiedCode(false);
+    } else {
+      setAutoDetectedBackup(null);
     }
   }, [isOpen, initialMode, incomingCode]);
 
@@ -74,124 +160,83 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
     : 0;
 
   const handleCopyLink = async () => {
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(currentUrl);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = currentUrl;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 3000);
-    } catch {
-      setRestoreError('Could not auto-copy. Please copy the link manually.');
-    }
+    linkInputRef.current?.select();
+    await copyTextToClipboard(currentUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 3000);
   };
 
   const handleCopyCode = async () => {
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(currentCode);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = currentCode;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 3000);
-    } catch {
-      setRestoreError('Could not auto-copy. Please copy the code manually.');
-    }
+    codeInputRef.current?.select();
+    await copyTextToClipboard(currentCode);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 3000);
   };
 
   const handleNativeShare = async () => {
     if (!canShare) return;
     try {
       await navigator.share({
-        title: 'My Investignito Case Progress',
-        text: 'Here is my 1-click restore link to continue my investigation:',
+        title: 'Investignito Case Progress',
+        text: 'Resume your mystery investigation on any device with this 1-click sync link:',
         url: currentUrl,
       });
     } catch {
-      // User cancelled share dialog
+      // User cancelled share
     }
   };
 
-  const handleEmailLink = () => {
-    const subject = encodeURIComponent('My Investignito Case Progress Backup');
-    const body = encodeURIComponent(
-      `Here is your 1-click restore link to continue your investigation on any phone, tablet, or computer:\n\n${currentUrl}\n\nSimply tap the link to load all your saved clues, eliminated suspects, and timer progress automatically!`
-    );
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-  };
-
-  const handleDownloadBackupFile = () => {
+  const handlePasteFromClipboard = async () => {
+    setRestoreError(null);
     try {
-      const payload = {
-        version: STORAGE_VERSION,
-        exportDate: new Date().toISOString(),
-        cases: allProgress,
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `investignito-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      setRestoreError('Failed to generate download file.');
+      if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          setRestoreInput(text.trim());
+          const parsed = parseSyncCode(text.trim());
+          if (parsed && Object.keys(parsed).length > 0) {
+            const count = Object.keys(parsed).length;
+            const solved = Object.values(parsed).filter((p) => p.status === 'solved').length;
+            setAutoDetectedBackup({ data: parsed, count, solved });
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Paste from clipboard error:', err);
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result;
-      if (typeof content === 'string') {
-        setRestoreInput(content);
-        setRestoreError(null);
-      }
-    };
-    reader.onerror = () => {
-      setRestoreError('Failed to read selected backup file.');
-    };
-    reader.readAsText(file);
-    // Reset file input so same file can be re-selected if desired
-    e.target.value = '';
+  // Instant 1-click execution when auto-detected or confirmed
+  const handleExecuteSync = (dataToRestore: Record<string, CaseProgress>) => {
+    setRestoreError(null);
+    setRestoreSuccess(null);
+
+    const restoredCount = Object.keys(dataToRestore).length;
+    onRestoreProgress(dataToRestore);
+    setAutoDetectedBackup(null);
+    setShowConfirmRestore(false);
+    setRestoreSuccess(
+      `Investigation synced on this device! (${restoredCount} case${restoredCount > 1 ? 's' : ''} loaded)`
+    );
+    setTimeout(() => {
+      onClose();
+    }, 1500);
   };
 
-  const handlePerformRestore = () => {
+  const handleInitiateManualRestore = () => {
     setRestoreError(null);
     setRestoreSuccess(null);
 
     const parsed = parseSyncCode(restoreInput);
     if (!parsed || Object.keys(parsed).length === 0) {
       setRestoreError(
-        'Invalid or corrupted backup. Please ensure you pasted a complete link (https://...?restore=INV-...), code (INV-...), or valid backup file.'
+        'Invalid or corrupted backup. Please ensure you pasted a complete link (https://...?restore=INV-...) or code (INV-...).'
       );
       return;
     }
 
-    const restoredCount = Object.keys(parsed).length;
-    onRestoreProgress(parsed);
-    setRestoreSuccess(
-      `Investigation restored successfully! (${restoredCount} case${restoredCount > 1 ? 's' : ''} loaded)`
-    );
-    setTimeout(() => {
-      onClose();
-    }, 1800);
+    setShowConfirmRestore(true);
   };
 
   return (
@@ -234,6 +279,7 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
             onClick={() => {
               setActiveTab('backup');
               setRestoreError(null);
+              setShowConfirmRestore(false);
             }}
             className={`py-2 px-3 rounded-lg text-center transition-all cursor-pointer ${
               activeTab === 'backup'
@@ -248,6 +294,8 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
             onClick={() => {
               setActiveTab('restore');
               setRestoreError(null);
+              setShowConfirmRestore(false);
+              checkClipboardAutomatically();
             }}
             className={`py-2 px-3 rounded-lg text-center transition-all cursor-pointer ${
               activeTab === 'restore'
@@ -271,30 +319,34 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
                     {solvedCount > 0 ? `${solvedCount} Solved` : ''}
                     {solvedCount > 0 && inProgressCount > 0 ? ' • ' : ''}
                     {inProgressCount > 0 ? `${inProgressCount} Active` : ''}
-                    {solvedCount === 0 && inProgressCount === 0 ? 'New Detective' : ''}
+                    {solvedCount === 0 && inProgressCount === 0 ? 'All Cases Ready' : ''}
                   </span>
                 </div>
                 <p className="text-[11px] text-neutral-300 leading-relaxed">
-                  Moving from your phone to laptop, or switching browsers? Save this link so you never lose your eliminated suspects, clues, or notes.
+                  Moving from your phone to laptop, or switching browsers? Copy your link below. When you open it on another device, it will ask to sync automatically!
                 </p>
               </div>
 
-              {/* Primary Action: 1-Click Restore Link */}
+              {/* Action 1: 1-Click Restore Link */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-300 block">
-                    1-Click Restore Link
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-1.5">
+                    <LinkIcon className="w-3.5 h-3.5 text-red-500" />
+                    <span>1-Click Restore Link</span>
                   </span>
                   <span className="text-[10px] font-mono font-bold text-emerald-400">
                     corexbooks.com
                   </span>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <input
+                    ref={linkInputRef}
                     type="text"
                     readOnly
                     value={currentUrl}
-                    className="flex-1 bg-black/80 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs font-mono text-neutral-300 truncate focus:outline-none select-all"
+                    onClick={() => linkInputRef.current?.select()}
+                    className="flex-1 bg-black/80 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs font-mono text-neutral-300 truncate focus:outline-none select-all cursor-pointer"
                   />
                   <button
                     type="button"
@@ -318,140 +370,154 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
                     )}
                   </button>
                 </div>
+              </div>
 
-                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 px-1">
-                  <span className="text-emerald-400/90 font-bold">Official Store: corexbooks.com/pages/investignito</span>
+              {/* Action 2: Share via native device sheet (AirDrop, Text, WhatsApp, etc.) */}
+              {canShare && (
+                <button
+                  type="button"
+                  onClick={handleNativeShare}
+                  className="w-full py-2.5 px-4 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-neutral-500 text-neutral-200 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <Share2 className="w-4 h-4 text-emerald-400" />
+                  <span>Send Link to Other Device (AirDrop / Message)</span>
+                </button>
+              )}
+
+              {/* Action 3: Manual Backup Code */}
+              <div className="space-y-2 pt-1 border-t border-neutral-800/80">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-400">
+                    Manual Backup Code
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-500">
+                    INV-...
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={codeInputRef}
+                    type="text"
+                    readOnly
+                    value={currentCode}
+                    onClick={() => codeInputRef.current?.select()}
+                    className="flex-1 bg-black/80 border border-neutral-700 rounded-xl px-3 py-2 text-[11px] font-mono text-neutral-400 truncate focus:outline-none select-all cursor-pointer"
+                  />
                   <button
                     type="button"
-                    onClick={() => {
-                      const netlifyUrl = generateSyncUrl(currentCode, 'https://investignito-v2.netlify.app/');
-                      if (navigator?.clipboard?.writeText) {
-                        navigator.clipboard.writeText(netlifyUrl);
-                      }
-                      setCopiedLink(true);
-                      setTimeout(() => setCopiedLink(false), 3000);
-                    }}
-                    className="text-neutral-400 hover:text-white underline cursor-pointer"
-                    title="Copy direct Netlify link"
+                    onClick={handleCopyCode}
+                    className={`py-2 px-3 rounded-xl text-[11px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+                      copiedCode
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200'
+                    }`}
                   >
-                    Copy direct Netlify link
+                    {copiedCode ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Code</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
 
-              {/* Action Buttons: Native Share (Mobile) + Email Link */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                {canShare && (
-                  <button
-                    type="button"
-                    onClick={handleNativeShare}
-                    className="py-2.5 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-neutral-500 text-neutral-200 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
-                  >
-                    <Share2 className="w-4 h-4 text-emerald-400" />
-                    <span>Share via App / AirDrop</span>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleEmailLink}
-                  className={`py-2.5 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-neutral-500 text-neutral-200 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    !canShare ? 'sm:col-span-2' : ''
-                  }`}
-                >
-                  <Mail className="w-4 h-4 text-red-400" />
-                  <span>Email Link to Myself</span>
-                </button>
-              </div>
-
-              {/* Download JSON Backup File */}
-              <button
-                type="button"
-                onClick={handleDownloadBackupFile}
-                className="w-full py-2.5 px-3 rounded-xl bg-neutral-950 hover:bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-neutral-400 hover:text-neutral-200 text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <FileDown className="w-4 h-4 text-amber-400" />
-                <span>Download Backup File (.json)</span>
-              </button>
-
-              {/* Collapsible raw backup code */}
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowRawCode(!showRawCode)}
-                  className="text-[11px] font-mono text-neutral-400 hover:text-neutral-200 underline transition-colors cursor-pointer"
-                >
-                  {showRawCode ? 'Hide manual backup code' : 'Prefer a manual backup code? Click here'}
-                </button>
-
-                {showRawCode && (
-                  <div className="mt-2 p-3 bg-black/80 border border-neutral-800 rounded-xl space-y-2 animate-fade-in">
-                    <span className="text-[10px] font-mono text-neutral-400 block">
-                      Copy this backup code and paste it on any other device:
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={currentCode}
-                        className="flex-1 bg-neutral-950 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-neutral-400 truncate select-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleCopyCode}
-                        className="py-1.5 px-2.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-[10px] font-mono font-bold uppercase flex items-center gap-1 cursor-pointer shrink-0"
-                      >
-                        {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copiedCode ? 'Copied' : 'Copy'}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+              <div className="p-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800 text-[11px] font-mono text-neutral-400 leading-relaxed flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>
+                  Automatic: Opening your link on your second device will automatically pop up <strong>"Sync on this device?"</strong> with zero pasting needed!
+                </span>
               </div>
             </div>
           ) : (
             /* TAB 2: RESTORE ON THIS DEVICE */
             <div className="space-y-4">
+              {/* AUTOMATIC ONE-CLICK SYNC BANNER IF BACKUP DETECTED */}
+              {autoDetectedBackup && !restoreSuccess && (
+                <div className="p-4 rounded-xl bg-gradient-to-r from-red-950/95 via-[#181216] to-red-950/95 border-2 border-red-500/80 shadow-2xl space-y-3 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                      <h3 className="text-xs sm:text-sm font-mono font-black uppercase tracking-wider text-white">
+                        Sync on this device?
+                      </h3>
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40">
+                      Auto-Detected
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-neutral-200 leading-relaxed">
+                    Found your saved investigation ({autoDetectedBackup.count} cases, {autoDetectedBackup.solved} solved). Tap below to sync everything automatically!
+                  </p>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleExecuteSync(autoDetectedBackup.data)}
+                      className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono font-black uppercase text-xs sm:text-sm tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-red-950/80 cursor-pointer active:scale-95 transition-all"
+                    >
+                      <Check className="w-4 h-4 text-emerald-300" />
+                      <span>Sync on this device</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAutoDetectedBackup(null)}
+                      className="py-3 px-3 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-white font-mono text-xs cursor-pointer"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <p className="text-xs text-neutral-300 leading-relaxed">
-                Paste the 1-click restore link or backup code you copied from your other device to load your saved investigation here.
+                Paste your 1-click restore link or backup code below to load your investigation onto this device.
               </p>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-300">
-                    Paste Backup Link, Code, or JSON
+                    Paste Backup Link or Code
                   </label>
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-[10px] font-mono font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
+                    onClick={handlePasteFromClipboard}
+                    className="text-[10px] font-mono font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer bg-neutral-900 px-2 py-1 rounded border border-neutral-700"
                   >
-                    <FileUp className="w-3 h-3" />
-                    <span>Upload .json File</span>
+                    <ClipboardPaste className="w-3 h-3" />
+                    <span>Paste from Clipboard</span>
                   </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".json,application/json,text/plain"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
                 </div>
 
                 <textarea
                   rows={3}
                   value={restoreInput}
                   onChange={(e) => {
-                    setRestoreInput(e.target.value);
+                    const val = e.target.value;
+                    setRestoreInput(val);
                     setRestoreError(null);
+                    setShowConfirmRestore(false);
+                    const parsed = parseSyncCode(val);
+                    if (parsed && Object.keys(parsed).length > 0) {
+                      const count = Object.keys(parsed).length;
+                      const solved = Object.values(parsed).filter((p) => p.status === 'solved').length;
+                      setAutoDetectedBackup({ data: parsed, count, solved });
+                    }
                   }}
-                  placeholder="Paste link (https://...?restore=INV-...), code (INV-...), or upload a .json file"
+                  placeholder="Paste link (https://...?restore=INV-...) or code (INV-...)"
                   className="w-full bg-black/80 border border-neutral-700 focus:border-red-500 rounded-xl p-3 text-xs font-mono text-neutral-200 placeholder:text-neutral-600 focus:outline-none transition-colors"
                 />
               </div>
 
               {/* Dynamic preview if valid content entered */}
-              {previewData && !restoreSuccess && (
+              {previewData && !restoreSuccess && !autoDetectedBackup && (
                 <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-600/50 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-fade-in">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>
@@ -474,15 +540,52 @@ export const SyncProgressModal: React.FC<SyncProgressModalProps> = ({
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={handlePerformRestore}
-                disabled={!restoreInput.trim()}
-                className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-red-950/60"
-              >
-                <Download className="w-4 h-4" />
-                <span>Restore Investigation</span>
-              </button>
+              {/* Manual Confirmation view before replacing progress */}
+              {showConfirmRestore ? (
+                <div className="p-4 rounded-xl bg-red-950/90 border border-red-600 space-y-3 animate-fade-in text-center">
+                  <div className="flex items-center justify-center gap-2 text-amber-400">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider">
+                      Confirm Replacement
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-medium text-white leading-relaxed">
+                    This replaces the progress saved on this device with the backup.
+                  </p>
+                  <div className="flex items-center justify-center gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmRestore(false)}
+                      className="py-2 px-4 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 hover:text-white text-xs font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const parsed = parseSyncCode(restoreInput);
+                        if (parsed) handleExecuteSync(parsed);
+                      }}
+                      className="py-2 px-5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-lg shadow-red-950/60"
+                    >
+                      Restore
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                !restoreSuccess &&
+                !autoDetectedBackup && (
+                  <button
+                    type="button"
+                    onClick={handleInitiateManualRestore}
+                    disabled={!restoreInput.trim()}
+                    className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:pointer-events-none text-white text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-red-950/60"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Restore Investigation</span>
+                  </button>
+                )
+              )}
             </div>
           )}
         </div>

@@ -34,6 +34,8 @@ import { CASE_OUTROS } from './data/outros';
 import { hasSeenOutro, markOutroSeen, shouldSkipAutomaticOutro } from './utils/outro';
 import { OutroVideo } from './components/OutroVideo';
 import { applyCaseVersionResets } from './utils/caseVersions';
+import { ENABLE_ADD_TO_DEVICE } from './config/features';
+import { InstalledAppNotice } from './components/InstalledAppNotice';
 
 export default function App() {
   // Add to Device state and prompt handling
@@ -313,6 +315,38 @@ export default function App() {
     window.open('https://account.trycorex.store/', '_blank', 'noopener,noreferrer');
   };
 
+  // Check if running as an installed home-screen app outside of an iframe
+  const isInstalledStandalone =
+    typeof window !== 'undefined' &&
+    window.self === window.top &&
+    ((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true);
+
+  if (isInstalledStandalone) {
+    return (
+      <div className="min-h-screen bg-[#060608] text-[#f5f5f5]">
+        <InstalledAppNotice
+          onOpenBackup={() => {
+            setSyncModalMode('backup');
+            setShowSyncModal(true);
+          }}
+        />
+        {/* Case Progress Transfer & Backup Modal */}
+        <SyncProgressModal
+          isOpen={showSyncModal}
+          onClose={() => {
+            setShowSyncModal(false);
+            setIncomingSyncCode(null);
+          }}
+          allProgress={allProgress}
+          onRestoreProgress={handleRestoreProgress}
+          initialMode={syncModalMode}
+          incomingCode={incomingSyncCode}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#070709] text-[#f5f5f5] flex flex-col font-sans selection:bg-red-600 selection:text-white relative overflow-x-hidden">
       {/* Creepy Drifting Dark Mist & Blizzard Background */}
@@ -362,7 +396,7 @@ export default function App() {
         onNavigate={(view) => setCurrentView(view)}
         onOpenHelp={() => setShowHelpModal(true)}
         onOpenSubscription={handleOpenSubscription}
-        onAddToDevice={triggerAddToDevice}
+        onAddToDevice={ENABLE_ADD_TO_DEVICE ? triggerAddToDevice : undefined}
         onOpenSync={() => {
           setSyncModalMode('backup');
           setShowSyncModal(true);
@@ -383,7 +417,7 @@ export default function App() {
               setCurrentView('case_detail');
             }}
             onOpenSubscription={handleOpenSubscription}
-            onAddToDevice={triggerAddToDevice}
+            onAddToDevice={ENABLE_ADD_TO_DEVICE ? triggerAddToDevice : undefined}
             onOpenSync={() => {
               setSyncModalMode('backup');
               setShowSyncModal(true);
@@ -471,11 +505,13 @@ export default function App() {
       />
 
       {/* Add to Device / Home Screen Instructions Modal */}
-      <AddToDeviceModal
-        isOpen={showAddToDeviceModal}
-        onClose={handleCloseAddToDeviceModal}
-        deferredPrompt={deferredPrompt}
-      />
+      {ENABLE_ADD_TO_DEVICE && (
+        <AddToDeviceModal
+          isOpen={showAddToDeviceModal}
+          onClose={handleCloseAddToDeviceModal}
+          deferredPrompt={deferredPrompt}
+        />
+      )}
 
       {/* Case Progress Transfer & Backup Modal */}
       <SyncProgressModal

@@ -307,10 +307,17 @@ export function formatTime(seconds: number | null | undefined): string {
 
 export function generateSyncCode(progressData: Record<string, CaseProgress>): string {
   try {
+    const fullData: Record<string, CaseProgress> = { ...progressData };
+    const defaultCases = ['case-1', 'case-2', 'case-3', 'case-4'];
+    for (const caseId of defaultCases) {
+      if (!fullData[caseId]) {
+        fullData[caseId] = getInitialProgress(caseId);
+      }
+    }
     const payload = {
       v: STORAGE_VERSION,
       t: Date.now(),
-      c: progressData,
+      c: fullData,
     };
     const json = JSON.stringify(payload);
     const encoded = btoa(
@@ -337,18 +344,17 @@ export function parseSyncCode(input: string): Record<string, CaseProgress> | nul
         if (directParsed && typeof directParsed === 'object') {
           const directCases = directParsed.cases || directParsed.c || directParsed;
           const directMigrated = migrateStorageData({ version: STORAGE_VERSION, cases: directCases });
-          if (Object.keys(directMigrated).length > 0) {
-            return sanitizeParsedCases(directMigrated);
-          }
+          return sanitizeParsedCases(directMigrated);
         }
       } catch {
         // Fall back to URL or base64 decoding
       }
     }
 
-    // Handle full URLs or query strings
-    if (raw.includes('?')) {
-      const urlQuery = raw.split('?')[1] || '';
+    // Handle full URLs, hashes, or query strings
+    if (raw.includes('?') || raw.includes('#')) {
+      const splitChar = raw.includes('?') ? '?' : '#';
+      const urlQuery = raw.split(splitChar)[1] || '';
       const params = new URLSearchParams(urlQuery);
       const queryVal = params.get('restore') || params.get('sync');
       if (queryVal) {
@@ -356,10 +362,19 @@ export function parseSyncCode(input: string): Record<string, CaseProgress> | nul
       }
     }
 
-    // URL-decode if needed
+    // Also handle raw strings that contain "restore=" or "sync=" directly
+    if (raw.includes('restore=')) {
+      raw = raw.split('restore=')[1].split('&')[0];
+    } else if (raw.includes('sync=')) {
+      raw = raw.split('sync=')[1].split('&')[0];
+    }
+
+    // URL-decode if needed (handles %3D and any nested encoding)
     try {
-      if (raw.includes('%')) {
-        raw = decodeURIComponent(raw);
+      while (raw.includes('%')) {
+        const decoded = decodeURIComponent(raw);
+        if (decoded === raw) break;
+        raw = decoded;
       }
     } catch {
       // ignore
@@ -420,7 +435,14 @@ function sanitizeParsedCases(migrated: Record<string, unknown>): Record<string, 
     };
   }
 
-  return Object.keys(sanitized).length > 0 ? sanitized : null;
+  // If the parsed payload was valid but empty (e.g. freshly initialized sync), provide initial cases
+  if (Object.keys(sanitized).length === 0) {
+    for (const caseId of ['case-1', 'case-2', 'case-3', 'case-4']) {
+      sanitized[caseId] = getInitialProgress(caseId);
+    }
+  }
+
+  return sanitized;
 }
 
 export const OFFICIAL_RESTORE_BASE_URL = 'https://corexbooks.com/pages/investignito/';

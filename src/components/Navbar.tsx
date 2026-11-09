@@ -4,6 +4,7 @@ import { ViewMode, CaseData, CaseProgress } from '../types';
 import { formatTime } from '../utils/storage';
 import { InvestignitoLogo } from './InvestignitoLogo';
 import { toggleFullScreen, isCurrentlyFullScreen } from '../utils/pwa';
+import { ENABLE_ADD_TO_DEVICE } from '../config/features';
 
 interface NavbarProps {
   currentView: ViewMode;
@@ -143,8 +144,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
 
-            {/* Add to Device - hidden on mobile (only shown on desktop if present) */}
-            {onAddToDevice && (
+            {/* Add to Device - hidden on mobile (only shown on desktop if present and enabled) */}
+            {ENABLE_ADD_TO_DEVICE && onAddToDevice && (
               <button
                 id="nav-add-to-device-btn"
                 onClick={onAddToDevice}

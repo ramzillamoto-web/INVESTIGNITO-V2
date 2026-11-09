@@ -23,6 +23,7 @@ import {
 import { CaseData, CaseProgress } from '../types';
 import { formatTime } from '../utils/storage';
 import { InvestignitoLogo } from './InvestignitoLogo';
+import { ENABLE_ADD_TO_DEVICE } from '../config/features';
 
 interface LandingViewProps {
   cases: CaseData[];
@@ -199,7 +200,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             )}
 
             {/* Small Secondary Text Link for Add to Device */}
-            {onAddToDevice && (
+            {ENABLE_ADD_TO_DEVICE && onAddToDevice && (
               <div className="mt-1.5 text-center">
                 <button
                   type="button"
@@ -689,7 +690,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             <span className="font-bold text-neutral-400">INVESTIGNITO - Weekly Case Puzzles</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px] sm:text-xs">
-            {onAddToDevice && (
+            {ENABLE_ADD_TO_DEVICE && onAddToDevice && (
               <button
                 type="button"
                 onClick={onAddToDevice}

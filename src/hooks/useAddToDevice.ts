@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { isStandalonePWA } from '../utils/pwa';
+import { ENABLE_ADD_TO_DEVICE } from '../config/features';
 
 export interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -12,6 +13,8 @@ export function useAddToDevice() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
+    if (!ENABLE_ADD_TO_DEVICE) return;
+
     setIsStandalone(isStandalonePWA());
 
     const handleBeforeInstall = (e: Event) => {

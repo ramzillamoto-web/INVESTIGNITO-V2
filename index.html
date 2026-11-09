@@ -29,24 +29,17 @@
       }
     </style>
     <script>
-      // Immediately purge any stale service workers or caches that could cause white screen lockups
+      // Redirect top-level visits on live netlify.app to the Shopify store page,
+      // EXCEPT when running as an installed home-screen app or on preview deploy URLs.
       try {
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(regs) {
-            for (var i = 0; i < regs.length; i++) {
-              regs[i].unregister();
-            }
-          });
-        }
-        if ('caches' in window) {
-          caches.keys().then(function(names) {
-            for (var i = 0; i < names.length; i++) {
-              caches.delete(names[i]);
-            }
-          });
+        var isStandalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+        var host = window.location.hostname.toLowerCase();
+        var isLiveNetlify = /\.netlify\.app$/.test(host) && host.indexOf('--') === -1;
+        if (!isStandalone && window.self === window.top && isLiveNetlify) {
+          window.location.replace('https://corexbooks.com/pages/investignito');
         }
       } catch (e) {
-        console.warn('SW purge non-fatal error:', e);
+        // non-fatal
       }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
