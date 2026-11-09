@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+import crypto from 'node:crypto';
 
 /**
  * Netlify Serverless Function: sync-progress
@@ -6,7 +6,7 @@ const crypto = require('crypto');
  * Handles authenticated cloud saves and loads for Shopify customer accounts.
  * Verifies HMAC SHA-256 signature generated with PROGRESS_SIGNING_SECRET.
  */
-exports.handler = async (event) => {
+export const handler = async (event) => {
   // 1. CORS Headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
