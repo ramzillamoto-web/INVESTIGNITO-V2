@@ -1,0 +1,6 @@
+{
+  "name": "INVESTIGNITO - Weekly Case Puzzles",
+  "description": "INVESTIGNITO - Weekly Case Puzzles: Step into unsolved master investigations, inspect sequential clues, and isolate the perpetrator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
