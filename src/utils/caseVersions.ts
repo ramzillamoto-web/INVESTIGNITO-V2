@@ -4,6 +4,7 @@ import { getInitialProgress } from './storage';
 export const CASE_CONTENT_VERSIONS: Record<string, number> = {
   'case-4': 2,
   'case-5': 1,
+  'case-006': 1,
 };
 
 const CASE_VERSIONS_KEY = 'investignito_case_versions_v1';

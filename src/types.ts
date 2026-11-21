@@ -64,7 +64,7 @@ export interface CaseData {
   code: string;
   title: string;
   tagline: string;
-  difficulty: 'Tutorial / Novice' | 'Challenging' | 'Mastermind' | 'Grandmaster';
+  difficulty: 'Tutorial / Novice' | 'Challenging' | 'Mastermind' | 'Grandmaster' | 'Grandmaster+';
   estimatedTime: string;
   dateAdded: string;
   victim: string;

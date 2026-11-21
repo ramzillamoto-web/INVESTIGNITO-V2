@@ -519,10 +519,13 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
 
   // If case is locked, show restricted clearance screen (unconditionally rendered after all hooks)
   if (isLocked) {
+    const isCase6Target = caseItem.id === 'case-006' || caseItem.id === 'case-6';
     const isCase5Target = caseItem.id === 'case-5';
     const isCase4Target = caseItem.id === 'case-4';
-    const reqCaseTitle = isCase5Target
-      ? 'Case 4: The 63rd Victim of Blackwood Hall'
+    const reqCaseTitle = isCase6Target
+      ? 'Case 5: The Stopped Clocks of Ravenmoor'
+      : isCase5Target
+      ? 'Case 4: The Pendulum Over Blackwood Spire'
       : isCase4Target
       ? 'Case 3: Jan Never Left the Station'
       : 'Case 2: The Solstice Masquerade';
@@ -534,14 +537,18 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
         </div>
         <div className="space-y-3">
           <span className="px-3.5 py-1 rounded bg-amber-950/90 border border-amber-700 text-amber-300 font-mono text-xs font-black uppercase tracking-widest inline-block">
-            {isCase5Target
+            {isCase6Target
+              ? 'RESTRICTED ACCESS • SOLVE CASE 5 FIRST'
+              : isCase5Target
               ? 'RESTRICTED ACCESS • SOLVE CASE 4 FIRST'
               : isCase4Target
               ? 'RESTRICTED ACCESS • SOLVE CASE 3 FIRST'
               : 'RESTRICTED ACCESS • LEVEL 3 CLEARANCE REQUIRED'}
           </span>
           <h1 className="text-3xl sm:text-4xl font-black font-display uppercase tracking-tight text-white">
-            {isCase5Target
+            {isCase6Target
+              ? 'Solve Case 5 first'
+              : isCase5Target
               ? 'Solve Case 4 first'
               : isCase4Target
               ? 'Solve Case 3 first'
@@ -554,10 +561,10 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md">
           {onSwitchToCase && (
             <button
-              onClick={() => onSwitchToCase(isCase5Target ? 'case-4' : isCase4Target ? 'case-3' : 'case-2')}
+              onClick={() => onSwitchToCase(isCase6Target ? 'case-5' : isCase5Target ? 'case-4' : isCase4Target ? 'case-3' : 'case-2')}
               className="w-full py-3.5 px-6 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono font-black text-sm uppercase tracking-wider transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer shadow-red-950/50"
             >
-              <span>{isCase5Target ? 'Play Case 4' : isCase4Target ? 'Play Case 3' : 'Investigate Case 2'}</span>
+              <span>{isCase6Target ? 'Play Case 5' : isCase5Target ? 'Play Case 4' : isCase4Target ? 'Play Case 3' : 'Investigate Case 2'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
@@ -585,7 +592,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
         onClick={() => handleApplyMarking(suspect)}
         className={`relative p-1 sm:p-2.5 lg:p-3 rounded-md sm:rounded-lg border transition-all duration-150 cursor-pointer select-none group flex flex-col justify-between touch-manipulation active:scale-[0.98] min-w-0 ${
           isCrossed
-            ? ['case-4', 'case-5'].includes(caseItem.id)
+            ? ['case-4', 'case-5', 'case-6', 'case-006'].includes(caseItem.id)
               ? 'bg-[#0a0a0a]/90 border-neutral-800 opacity-90 hover:opacity-100'
               : 'bg-[#0a0a0a]/90 border-neutral-800 opacity-60 hover:opacity-90'
             : isCircled
@@ -650,7 +657,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
             <h3
               className={`text-[9px] sm:text-[11px] md:text-xs lg:text-sm uppercase tracking-tight sm:tracking-normal whitespace-normal break-words leading-tight ${
                 isCrossed
-                  ? ['case-4', 'case-5'].includes(caseItem.id)
+                  ? ['case-4', 'case-5', 'case-6', 'case-006'].includes(caseItem.id)
                     ? 'line-through text-neutral-300 font-medium'
                     : 'line-through text-neutral-500 font-light'
                   : isCircled
@@ -1132,6 +1139,8 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                             ? '/images/case-3-scene.jpg'
                             : caseItem.id === 'case-4'
                             ? '/images/case-4-scene.jpg'
+                            : (caseItem.id === 'case-006' || caseItem.id === 'case-6')
+                            ? '/images/case-6-scene.jpg'
                             : caseItem.id === 'case-5'
                             ? '/images/case-5-scene.jpg'
                             : '/images/case-1-scene.jpg')
@@ -1250,7 +1259,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                   Registry Ledger
                 </span>
                 <span className="text-[9px] sm:text-[10px] font-mono font-bold text-amber-200/80 block mt-0.5 truncate">
-                  Page {currentPage}/{caseItem.totalPages}{!['case-4', 'case-5'].includes(caseItem.id) ? ` • ${remainingSurviving} Remaining` : ''}
+                  Page {currentPage}/{caseItem.totalPages}{!['case-4', 'case-5', 'case-6', 'case-006'].includes(caseItem.id) ? ` • ${remainingSurviving} Remaining` : ''}
                 </span>
               </div>
             </div>
@@ -1365,8 +1374,8 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
 
                 {/* Right side controls: Search Filter + Sticky Expanding Tool Button in the circled spot */}
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                  {/* Search Filter (hidden for Case 4 & Case 5) */}
-                  {!['case-4', 'case-5'].includes(caseItem.id) && (
+                  {/* Search Filter (hidden for Case 4, Case 5 & Case 6) */}
+                  {!['case-4', 'case-5', 'case-6', 'case-006'].includes(caseItem.id) && (
                     <div className="relative">
                       <Search className="w-3 h-3 sm:w-4 sm:h-4 absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                       <input
@@ -1559,7 +1568,7 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                       <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-amber-400">
                         ○ {circledTotal}
                       </span>
-                      {!['case-4', 'case-5'].includes(caseItem.id) && (
+                      {!['case-4', 'case-5', 'case-6', 'case-006'].includes(caseItem.id) && (
                         <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-300">
                           {remainingSurviving} LEFT
                         </span>
@@ -1591,16 +1600,16 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               )}
             </div>
 
-            {/* Column labels for Case 4 & Case 5 (Columns 1-4) */}
-            {['case-4', 'case-5'].includes(caseItem.id) && (
+            {/* Column labels for Case 4, Case 5 & Case 6 (Columns 1-4) */}
+            {['case-4', 'case-5', 'case-6', 'case-006'].includes(caseItem.id) && (
               <div
                 className={`grid ${
-                  caseItem.id === 'case-5'
+                  ['case-5', 'case-6', 'case-006'].includes(caseItem.id)
                     ? 'grid-cols-[20px_repeat(4,1fr)] sm:grid-cols-[28px_repeat(4,1fr)]'
                     : 'grid-cols-4'
                 } gap-1 sm:gap-2.5 lg:gap-3 mb-1.5 font-mono text-[8px] sm:text-[10px] text-neutral-400 text-center font-bold tracking-wider select-none`}
               >
-                {caseItem.id === 'case-5' && (
+                {['case-5', 'case-6', 'case-006'].includes(caseItem.id) && (
                   <span className="py-0.5 rounded bg-neutral-950 border border-amber-600/40 text-amber-400 font-black">
                     ROW
                   </span>
@@ -1612,15 +1621,15 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               </div>
             )}
 
-            {/* Suspects Grid (with Row numbers 1-15 down the left for Case 5) */}
+            {/* Suspects Grid (with Row numbers 1-15 down the left for Case 5 & Case 6) */}
             <div
               className={`grid ${
-                caseItem.id === 'case-5'
+                ['case-5', 'case-6', 'case-006'].includes(caseItem.id)
                   ? 'grid-cols-[20px_repeat(4,1fr)] sm:grid-cols-[28px_repeat(4,1fr)]'
                   : 'grid-cols-4'
               } gap-1 sm:gap-2.5 lg:gap-3 mb-4 sm:mb-6`}
             >
-              {caseItem.id === 'case-5'
+              {['case-5', 'case-6', 'case-006'].includes(caseItem.id)
                 ? Array.from({ length: 15 }, (_, rowIndex) => {
                     const rowNum = rowIndex + 1;
                     const rowSuspects = suspectsOnCurrentPage.filter((s) => s.row === rowNum);
@@ -1713,46 +1722,76 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
                 </span>
               </div>
 
-              {/* 10 Page Navigation Buttons */}
-              <div className="flex items-center flex-wrap gap-1 sm:gap-1.5">
-                <button
-                  id="prev-page-btn"
-                  disabled={currentPage <= 1 || searchQuery.length > 0}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="p-1.5 sm:p-2 rounded bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed text-white border border-neutral-700 transition-colors"
-                  aria-label="Previous Page"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </button>
+              {/* 20 Page Navigation with 5-Page Block Selector for quick jumping */}
+              <div className="flex flex-col gap-1.5 w-full sm:w-auto items-center sm:items-end">
+                {caseItem.totalPages >= 20 && (
+                  <div className="flex items-center gap-1 text-[9px] font-mono">
+                    <span className="text-neutral-500 font-bold uppercase mr-1 hidden xs:inline">Blocks:</span>
+                    {[
+                      { label: 'P1–5', start: 1 },
+                      { label: 'P6–10', start: 6 },
+                      { label: 'P11–15', start: 11 },
+                      { label: 'P16–20', start: 16 },
+                    ].map((block) => {
+                      const isActiveBlock = currentPage >= block.start && currentPage < block.start + 5;
+                      return (
+                        <button
+                          key={block.label}
+                          type="button"
+                          onClick={() => setCurrentPage(block.start)}
+                          className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold transition-colors cursor-pointer border ${
+                            isActiveBlock
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                              : 'bg-neutral-900 text-neutral-400 hover:text-white border-neutral-800'
+                          }`}
+                        >
+                          {block.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
 
-                {Array.from({ length: caseItem.totalPages }, (_, i) => i + 1).map((pg) => {
-                  const isCurrent = currentPage === pg && !searchQuery;
-                  return (
-                    <button
-                      key={pg}
-                      id={`page-btn-${pg}`}
-                      disabled={searchQuery.length > 0}
-                      onClick={() => setCurrentPage(pg)}
-                      className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded text-[10px] sm:text-xs font-black transition-colors min-w-[24px] sm:min-w-[32px] ${
-                        isCurrent
-                          ? 'bg-white text-black'
-                          : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border border-neutral-700'
-                      }`}
-                    >
-                      {pg}
-                    </button>
-                  );
-                })}
+                <div className="flex items-center flex-wrap gap-1 sm:gap-1.5 justify-center sm:justify-end">
+                  <button
+                    id="prev-page-btn"
+                    disabled={currentPage <= 1 || searchQuery.length > 0}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="p-1.5 sm:p-2 rounded bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed text-white border border-neutral-700 transition-colors"
+                    aria-label="Previous Page"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </button>
 
-                <button
-                  id="next-page-btn"
-                  disabled={currentPage >= caseItem.totalPages || searchQuery.length > 0}
-                  onClick={() => setCurrentPage((p) => Math.min(caseItem.totalPages, p + 1))}
-                  className="p-1.5 sm:p-2 rounded bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed text-white border border-neutral-700 transition-colors"
-                  aria-label="Next Page"
-                >
-                  <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </button>
+                  {Array.from({ length: caseItem.totalPages }, (_, i) => i + 1).map((pg) => {
+                    const isCurrent = currentPage === pg && !searchQuery;
+                    return (
+                      <button
+                        key={pg}
+                        id={`page-btn-${pg}`}
+                        disabled={searchQuery.length > 0}
+                        onClick={() => setCurrentPage(pg)}
+                        className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded text-[10px] sm:text-xs font-black transition-colors min-w-[24px] sm:min-w-[30px] ${
+                          isCurrent
+                            ? 'bg-white text-black'
+                            : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border border-neutral-700'
+                        }`}
+                      >
+                        {pg}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    id="next-page-btn"
+                    disabled={currentPage >= caseItem.totalPages || searchQuery.length > 0}
+                    onClick={() => setCurrentPage((p) => Math.min(caseItem.totalPages, p + 1))}
+                    className="p-1.5 sm:p-2 rounded bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed text-white border border-neutral-700 transition-colors"
+                    aria-label="Next Page"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1965,7 +2004,9 @@ export const CaseDetailView: React.FC<CaseDetailViewProps> = ({
               <img
                 src={
                   caseItem.imageUrl ||
-                  (caseItem.id === 'case-5'
+                  (caseItem.id === 'case-006' || caseItem.id === 'case-6'
+                    ? '/images/case-6-scene.jpg'
+                    : caseItem.id === 'case-5'
                     ? '/images/case-5-scene.jpg'
                     : caseItem.id === 'case-4'
                     ? '/images/case-4-scene.jpg'

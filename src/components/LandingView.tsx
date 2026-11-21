@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowRight,
   Clock,
@@ -23,6 +23,7 @@ import {
   Key,
   RotateCcw,
   CheckCircle2,
+  Compass,
 } from 'lucide-react';
 import { CaseData, CaseProgress } from '../types';
 import { formatTime } from '../utils/storage';
@@ -63,6 +64,30 @@ export const LandingView: React.FC<LandingViewProps> = ({
   // Map of caseId -> boolean to track expanded "See Details" independently for each case
   const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({});
   const [lockedModalCase, setLockedModalCase] = useState<CaseData | null>(null);
+  const [highlightedCaseId, setHighlightedCaseId] = useState<string | null>(null);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleQuickJump = (caseId: string) => {
+    const el = document.getElementById(`featured-case-card-${caseId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightedCaseId(caseId);
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+      }
+      highlightTimerRef.current = setTimeout(() => {
+        setHighlightedCaseId(null);
+      }, 2400);
+    }
+  };
 
   const toggleDetails = (caseId: string) => {
     setExpandedDetails((prev) => ({
@@ -106,14 +131,18 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   NEW CLASSIFIED DOSSIER ACCESSIBLE
                 </span>
                 <h3 className="text-base sm:text-lg font-black text-white font-display uppercase tracking-tight">
-                  {unlockedCaseBanner === 'case-5'
+                  {unlockedCaseBanner === 'case-006' || unlockedCaseBanner === 'case-6'
+                    ? 'Case 6: The Last Voyage of the Halcyon is now Unlocked!'
+                    : unlockedCaseBanner === 'case-5'
                     ? 'Case 5: The Stopped Clocks of Ravenmoor is now Unlocked!'
                     : unlockedCaseBanner === 'case-4'
                     ? 'Case 4: The Pendulum Over Blackwood Spire is now Unlocked!'
                     : 'Case 3: Jan Never Left the Station is now Unlocked!'}
                 </h3>
                 <p className="text-xs text-neutral-300 font-medium">
-                  {unlockedCaseBanner === 'case-5'
+                  {unlockedCaseBanner === 'case-006' || unlockedCaseBanner === 'case-6'
+                    ? 'Grandmaster+ clearance granted. Investigate the bridge and the 1,200 names on the Halcyon passenger manifest.'
+                    : unlockedCaseBanner === 'case-5'
                     ? 'Grandmaster clearance granted. You can now investigate Lady Imogen’s murder in the Ravenmoor clock room.'
                     : unlockedCaseBanner === 'case-4'
                     ? 'Your Level 4 clearance is granted. You can now investigate the Blackwood Spire clocktower sabotage.'
@@ -130,7 +159,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 }}
                 className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-black text-xs uppercase tracking-wider transition-colors shadow-lg flex items-center gap-1.5 cursor-pointer min-h-[44px] touch-manipulation active:scale-[0.98]"
               >
-                <span>Solve {unlockedCaseBanner === 'case-5' ? 'Case 5' : unlockedCaseBanner === 'case-4' ? 'Case 4' : 'Case 3'} Now</span>
+                <span>Solve {unlockedCaseBanner === 'case-006' || unlockedCaseBanner === 'case-6' ? 'Case 6' : unlockedCaseBanner === 'case-5' ? 'Case 5' : unlockedCaseBanner === 'case-4' ? 'Case 4' : 'Case 3'} Now</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               {onDismissUnlockBanner && (
@@ -409,26 +438,120 @@ export const LandingView: React.FC<LandingViewProps> = ({
           </div>
         )}
 
+        {/* Quick Case Navigation Bar (Sticky under Navbar) */}
+        <div
+          id="quick-case-navigation-bar"
+          className="sticky top-[52px] sm:top-[60px] z-30 -mx-3 sm:mx-0 px-3 sm:px-4 py-2 sm:py-2.5 mb-6 sm:mb-8 rounded-none sm:rounded-2xl bg-[#0a0a0d]/95 backdrop-blur-md border-y sm:border border-neutral-800 shadow-[0_10px_30px_rgba(0,0,0,0.85)] flex flex-col md:flex-row md:items-center justify-between gap-2.5"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-neutral-300 shrink-0">
+              <Compass className="w-4 h-4 text-red-500 shrink-0 animate-pulse" />
+              <span className="font-black text-white tracking-widest text-[11px] sm:text-xs">QUICK JUMP:</span>
+              <span className="text-neutral-500 text-[10px] hidden sm:inline">• SELECT A CASE TO JUMP</span>
+            </div>
+            <span className="text-[10px] font-mono text-neutral-500 sm:hidden">
+              {cases.length} CASES
+            </span>
+          </div>
+
+          {/* Pill/Tab Buttons dynamically mapped from cases */}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 md:pb-0 touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {cases.map((c, idx) => {
+              const cProgress = allProgress[c.id] || { status: 'unsolved' };
+              const isSolved = cProgress.status === 'solved';
+              const isInProgress = cProgress.status === 'in_progress';
+              const isC5 = c.id === 'case-5';
+              const isC6 = c.id === 'case-006' || c.id === 'case-6';
+              const isCase2Solved = allProgress['case-2']?.status === 'solved';
+              const isCase3Solved = allProgress['case-3']?.status === 'solved';
+              const isCase4Solved = allProgress['case-4']?.status === 'solved';
+              const isCase5Solved = allProgress['case-5']?.status === 'solved';
+              const isNormallyLocked =
+                (c.id === 'case-3' && !isCase2Solved) ||
+                (c.id === 'case-4' && !isCase3Solved) ||
+                (c.id === 'case-5' && !isCase4Solved) ||
+                (isC6 && !isCase5Solved);
+              const isLocked =
+                !isMaster &&
+                currentDetectiveName?.toLowerCase() !== 'ramazan' &&
+                isNormallyLocked;
+
+              const rawNum = c.code.match(/\d+/) || c.id.match(/\d+/);
+              const numStr = rawNum ? rawNum[0] : String(idx + 1);
+              const pillLabel = `#${numStr.padStart(2, '0')}`;
+              const isCurrentHighlight = highlightedCaseId === c.id;
+
+              return (
+                <button
+                  key={c.id}
+                  id={`quick-jump-btn-${c.id}`}
+                  type="button"
+                  onClick={() => handleQuickJump(c.id)}
+                  className={`group shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer active:scale-95 touch-manipulation min-h-[36px] ${
+                    isCurrentHighlight
+                      ? 'ring-2 ring-white scale-105 shadow-lg bg-neutral-100 text-black border-white'
+                      : isSolved
+                      ? 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/70 text-emerald-300 hover:text-white shadow-sm shadow-emerald-950/50'
+                      : isInProgress
+                      ? 'bg-red-950/90 hover:bg-red-900 border-2 border-red-500 text-white shadow-[0_0_12px_rgba(220,38,38,0.5)]'
+                      : (isC5 || isC6) && !isLocked
+                      ? 'bg-amber-950/80 hover:bg-amber-900 border border-amber-400 text-amber-300 hover:text-white shadow-[0_0_10px_rgba(245,158,11,0.3)]'
+                      : isLocked
+                      ? 'bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-800 hover:border-amber-700/60 text-neutral-400 hover:text-amber-300'
+                      : 'bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-neutral-500 text-neutral-200 hover:text-white shadow-sm'
+                  }`}
+                  title={`${c.code}: ${c.title} (${isSolved ? 'Solved' : isInProgress ? 'In Progress' : isLocked ? 'Locked' : 'Available'})`}
+                >
+                  {isSolved ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3] shrink-0" />
+                  ) : isInProgress ? (
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                  ) : (isC5 || isC6) && !isLocked ? (
+                    <Sparkles className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+                  ) : isLocked ? (
+                    <Lock className="w-3 h-3 text-amber-500/80 group-hover:text-amber-400 shrink-0" />
+                  ) : (
+                    <span className="w-1.5 h-1.5 rounded-full bg-neutral-600 group-hover:bg-red-500 transition-colors shrink-0" />
+                  )}
+
+                  <span>{pillLabel}</span>
+
+                  <span className="hidden xl:inline text-[10px] font-normal opacity-75 truncate max-w-[85px]">
+                    {c.title.split(' ')[0]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Case Cards List */}
         <div id="case-cards-list" className="space-y-8 sm:space-y-12">
-          {cases.map((caseItem) => {
+          {cases.map((caseItem, caseIndex) => {
             const progress = allProgress[caseItem.id] || { status: 'unsolved' };
             const showDetails = !!expandedDetails[caseItem.id];
             const isCase2 = caseItem.id === 'case-2';
             const isCase3 = caseItem.id === 'case-3';
             const isCase4 = caseItem.id === 'case-4';
             const isCase5 = caseItem.id === 'case-5';
+            const isCase6 = caseItem.id === 'case-006' || caseItem.id === 'case-6';
             const isCase2Solved = allProgress['case-2']?.status === 'solved';
             const isCase3Solved = allProgress['case-3']?.status === 'solved';
             const isCase4Solved = allProgress['case-4']?.status === 'solved';
+            const isCase5Solved = allProgress['case-5']?.status === 'solved';
             const isNormallyLocked =
               (isCase3 && !isCase2Solved) ||
               (isCase4 && !isCase3Solved) ||
-              (isCase5 && !isCase4Solved);
+              (isCase5 && !isCase4Solved) ||
+              (isCase6 && !isCase5Solved);
             const isLocked =
               !isMaster &&
               currentDetectiveName?.toLowerCase() !== 'ramazan' &&
               isNormallyLocked;
+            const isHighlighted = highlightedCaseId === caseItem.id;
+            const rawNumberMatch = caseItem.code.match(/\d+/) || caseItem.id.match(/\d+/);
+            const caseNumStr = rawNumberMatch ? rawNumberMatch[0] : String(caseIndex + 1);
+            const formattedCaseBadge = `CASE #${caseNumStr.padStart(2, '0')}`;
             const sceneImage =
               caseItem.imageUrl ||
               (isCase2
@@ -439,24 +562,30 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 ? '/images/case-4-scene.jpg'
                 : isCase5
                 ? '/images/case-5-scene.jpg'
+                : isCase6
+                ? '/images/case-6-scene.jpg'
                 : '/images/case-1-scene.jpg');
 
             return (
               <div
                 key={caseItem.id}
                 id={`featured-case-card-${caseItem.id}`}
-                className={`relative bg-[#17171a] border-y-4 sm:border-2 sm:border-y-4 rounded-none sm:rounded-2xl overflow-hidden shadow-2xl transition-all duration-200 ${
-                  isLocked
+                className={`scroll-mt-24 sm:scroll-mt-28 relative bg-[#17171a] border-y-4 sm:border-2 sm:border-y-4 rounded-none sm:rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 ${
+                  isHighlighted
+                    ? (isCase5 || isCase6)
+                      ? 'ring-4 ring-amber-400 border-amber-300 shadow-[0_0_60px_rgba(245,158,11,0.95)] scale-[1.01]'
+                      : 'ring-4 ring-red-500 border-red-400 shadow-[0_0_60px_rgba(239,68,68,0.9)] scale-[1.01]'
+                    : isLocked
                     ? 'border-neutral-800 opacity-90 hover:border-neutral-700'
-                    : isCase5
+                    : (isCase5 || isCase6)
                     ? 'border-amber-400 sm:border-neutral-800 sm:border-y-amber-400 hover:border-amber-300 shadow-[0_0_40px_rgba(245,158,11,0.55),0_0_80px_rgba(217,119,6,0.3)] ring-1 ring-amber-400/60 animate-border-aura-pulse motion-reduce:animate-none'
                     : isCase4
                     ? 'border-red-600 sm:border-neutral-800 sm:border-y-red-600 hover:border-neutral-700 shadow-[0_0_35px_rgba(220,38,38,0.35)] animate-border-aura-pulse motion-reduce:animate-none'
                     : 'border-red-600 sm:border-neutral-800 sm:border-y-red-600 hover:border-neutral-700'
                 }`}
               >
-                {/* Case 5 Glowing Gold Laser Scanning Beams on Top & Bottom Borders */}
-                {isCase5 && (
+                {/* Case 5 & 6 Glowing Gold Laser Scanning Beams on Top & Bottom Borders */}
+                {(isCase5 || isCase6) && (
                   <>
                     <div className="absolute top-0 left-0 right-0 h-[4px] bg-amber-400 overflow-hidden z-20 pointer-events-none shadow-[0_0_12px_rgba(245,158,11,0.9)]">
                       <div className="w-1/2 h-full bg-gradient-to-r from-transparent via-yellow-100 to-transparent shadow-[0_0_16px_rgba(255,255,255,1),0_0_24px_rgba(245,158,11,1)] animate-laser-scan-h motion-reduce:hidden" />
@@ -501,7 +630,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                               ? isLocked
                                 ? 'bg-gradient-to-tr from-neutral-700/20 to-neutral-900/40'
                                 : 'bg-gradient-to-tr from-amber-600/30 to-red-600/30'
-                              : isCase5
+                              : (isCase5 || isCase6)
                               ? isLocked
                                 ? 'bg-gradient-to-tr from-neutral-700/20 to-neutral-900/40'
                                 : 'bg-gradient-to-tr from-amber-500/50 via-yellow-400/40 to-amber-600/50'
@@ -511,28 +640,29 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
                         {/* Top Crime Scene Header Overlay Chips */}
                         <div className="absolute top-2 left-2 right-2 sm:top-2.5 sm:left-2.5 sm:right-2.5 z-20 flex items-center justify-between pointer-events-none">
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/85 backdrop-blur-md border border-neutral-800 text-[10px] font-mono font-black uppercase text-neutral-200">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/90 backdrop-blur-md border border-neutral-700 text-[10px] sm:text-[11px] font-mono font-black uppercase text-neutral-200 shadow-md">
+                            <span className={(isCase5 || isCase6) ? 'text-amber-400 font-black' : 'text-red-400 font-black'}>{formattedCaseBadge}</span>
+                            <span className="text-neutral-600">•</span>
                             {isLocked ? (
-                              <>
+                              <span className="text-amber-400 flex items-center gap-1">
                                 <Lock className="w-3 h-3 text-amber-500" />
-                                <span>RESTRICTED • {caseItem.code.toUpperCase()}</span>
-                              </>
+                                <span>LOCKED</span>
+                              </span>
                             ) : progress.status === 'solved' ? (
-                              <>
-                                <Check className="w-3 h-3 text-emerald-400" />
-                                <span className="text-emerald-400">SOLVED • {caseItem.code.toUpperCase()}</span>
-                              </>
+                              <span className="text-emerald-400 flex items-center gap-1">
+                                <Check className="w-3 h-3 text-emerald-400 stroke-[3]" />
+                                <span>SOLVED</span>
+                              </span>
                             ) : progress.status === 'in_progress' ? (
-                              <>
+                              <span className="text-red-400 flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
-                                <span className="text-red-400">ACTIVE • {caseItem.code.toUpperCase()}</span>
-                              </>
+                                <span>ACTIVE</span>
+                              </span>
                             ) : (
-                              <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
+                              <span className="text-neutral-300 flex items-center gap-1">
                                 <Camera className="w-3 h-3 text-red-500" />
-                                <span>CRIME SCENE • {caseItem.code.toUpperCase()}</span>
-                              </>
+                                <span>SCENE</span>
+                              </span>
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 pointer-events-none">
@@ -542,7 +672,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                                 <span>MASTER ACCESS</span>
                               </span>
                             )}
-                            {isCase5 && !isLocked && progress.status !== 'solved' && (
+                            {(isCase5 || isCase6) && !isLocked && progress.status !== 'solved' && (
                               <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black font-mono font-black text-[9px] uppercase tracking-wider shadow-lg shadow-amber-500/60 animate-pulse motion-reduce:animate-none flex items-center gap-1 border border-yellow-200">
                                 <Sparkles className="w-2.5 h-2.5 text-black fill-black" />
                                 <span>NEW</span>
@@ -561,10 +691,10 @@ export const LandingView: React.FC<LandingViewProps> = ({
                         </div>
 
                         {/* Forensic Corner Target Brackets */}
-                        <div className={`absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 ${isLocked ? 'border-amber-600' : isCase5 ? 'border-amber-400' : 'border-red-500'} z-20 pointer-events-none`} />
-                        <div className={`absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 ${isLocked ? 'border-amber-600' : isCase5 ? 'border-amber-400' : 'border-red-500'} z-20 pointer-events-none`} />
-                        <div className={`absolute bottom-1.5 left-1.5 w-3 h-3 border-b-2 border-l-2 ${isLocked ? 'border-amber-600' : isCase5 ? 'border-amber-400' : 'border-red-500'} z-20 pointer-events-none`} />
-                        <div className={`absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 ${isLocked ? 'border-amber-600' : isCase5 ? 'border-amber-400' : 'border-red-500'} z-20 pointer-events-none`} />
+                        <div className={`absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 ${isLocked ? 'border-amber-600' : (isCase5 || isCase6) ? 'border-amber-400' : 'border-red-500'} z-20 pointer-events-none`} />
+                        <div className={`absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 ${isLocked ? 'border-amber-600' : (isCase5 || isCase6) ? 'border-amber-400' : 'border-red-500'} z-20 pointer-events-none`} />
+                        <div className={`absolute bottom-1.5 left-1.5 w-3 h-3 border-b-2 border-l-2 ${isLocked ? 'border-amber-600' : (isCase5 || isCase6) ? 'border-amber-400' : 'border-red-500'} z-20 pointer-events-none`} />
+                        <div className={`absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 ${isLocked ? 'border-amber-600' : (isCase5 || isCase6) ? 'border-amber-400' : 'border-red-500'} z-20 pointer-events-none`} />
 
                         {/* Image Container with full object-cover filling frame */}
                         <div className="relative w-full h-full rounded-lg overflow-hidden bg-black flex items-center justify-center aspect-video md:aspect-square">
@@ -587,7 +717,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                                 <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
                               </div>
                               <span className="text-[9px] sm:text-[10px] font-mono font-black uppercase tracking-widest text-amber-300 bg-black/80 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded border border-neutral-800">
-                                {isCase5 ? 'COMPLETE CASE 4' : isCase4 ? 'COMPLETE CASE 3' : 'COMPLETE CASE 2'}
+                                {isCase6 ? 'COMPLETE CASE 5' : isCase5 ? 'COMPLETE CASE 4' : isCase4 ? 'COMPLETE CASE 3' : 'COMPLETE CASE 2'}
                               </span>
                             </div>
                           )}
@@ -612,50 +742,70 @@ export const LandingView: React.FC<LandingViewProps> = ({
                     {/* Right Column: flex-grow: 1 content area */}
                     <div className="flex-1 flex flex-col justify-between min-w-0">
                       <div>
-                        {/* Top Header Metadata Tags Bar */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-2 sm:mb-2.5">
-                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                            <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider bg-red-600 text-white shadow-md">
-                              {caseItem.code.toUpperCase()} CASE FILE
-                            </span>
-                            {isCase5 && !isLocked && (
-                              <span className="relative inline-flex items-center gap-1 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black shadow-lg shadow-amber-500/60 border border-yellow-200 animate-pulse motion-reduce:animate-none">
-                                <Sparkles className="w-3 h-3 text-black fill-black animate-spin motion-reduce:hidden" />
+                        {/* Top Header Metadata Tags Bar with Prominent Case Numbering */}
+                        <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 mb-2.5 sm:mb-3 pb-2.5 sm:pb-3 border-b border-neutral-800/80">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                            {/* Large High-Contrast Case Badge */}
+                            <div
+                              className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-mono font-black tracking-wider uppercase shadow-xl transition-all ${
+                                (isCase5 || isCase6)
+                                  ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black border-2 border-yellow-200 shadow-[0_0_20px_rgba(245,158,11,0.6)]'
+                                  : isLocked
+                                  ? 'bg-neutral-900 text-amber-400 border-2 border-amber-600/70 shadow-[0_0_12px_rgba(217,119,6,0.3)]'
+                                  : progress.status === 'solved'
+                                  ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white border-2 border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                                  : 'bg-gradient-to-r from-red-600 to-rose-700 text-white border-2 border-red-400 shadow-[0_0_18px_rgba(220,38,38,0.5)]'
+                              }`}
+                            >
+                              <span className="tracking-widest text-sm sm:text-base font-black">
+                                {formattedCaseBadge}
+                              </span>
+                              <span className="text-[10px] sm:text-xs opacity-80 font-bold hidden xs:inline">
+                                DOSSIER
+                              </span>
+                            </div>
+
+                            {/* Clear Status Indicator alongside the Case Number */}
+                            {isLocked ? (
+                              <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-amber-400 px-2.5 py-1 sm:py-1.5 rounded-lg bg-amber-950/80 border border-amber-600/60 flex items-center gap-1.5 shadow-sm">
+                                <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                <span>{isCase6 ? 'LOCKED (SOLVE CASE 5)' : isCase5 ? 'LOCKED (SOLVE CASE 4)' : isCase4 ? 'LOCKED (SOLVE CASE 3)' : 'LOCKED (SOLVE CASE 2)'}</span>
+                              </span>
+                            ) : progress.status === 'in_progress' ? (
+                              <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-white px-2.5 py-1 sm:py-1.5 rounded-lg bg-red-600 border border-red-400 flex items-center gap-1.5 shadow-md shadow-red-950/60 animate-pulse">
+                                <Clock className="w-3.5 h-3.5 text-white shrink-0" />
+                                <span>IN PROGRESS ({formatTime(progress.elapsedSeconds)})</span>
+                              </span>
+                            ) : progress.status === 'solved' ? (
+                              <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-emerald-300 px-2.5 py-1 sm:py-1.5 rounded-lg bg-emerald-950/90 border border-emerald-500/80 flex items-center gap-1.5 shadow-sm">
+                                <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3] shrink-0" />
+                                <span>SOLVED {progress.solveTimeSeconds ? `(${formatTime(progress.solveTimeSeconds)})` : ''}</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] sm:text-xs font-mono font-bold uppercase text-neutral-300 px-2.5 py-1 sm:py-1.5 rounded-lg bg-neutral-900 border border-neutral-700">
+                                READY TO INVESTIGATE
+                              </span>
+                            )}
+
+                            {/* Special NEW badges */}
+                            {(isCase5 || isCase6) && !isLocked && (
+                              <span className="relative inline-flex items-center gap-1 px-2.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black shadow-lg shadow-amber-500/60 border border-yellow-200 animate-pulse motion-reduce:animate-none">
+                                <Sparkles className="w-3 h-3 text-black fill-black" />
                                 <span>NEW</span>
                               </span>
                             )}
                             {isCase4 && !isLocked && (
-                              <span className="relative inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white shadow-lg shadow-red-950/80 border border-red-400/80 animate-pulse motion-reduce:animate-none">
-                                <Sparkles className="w-3 h-3 text-amber-300 animate-spin motion-reduce:hidden" />
+                              <span className="relative inline-flex items-center gap-1 px-2 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white shadow-md border border-red-400/80 animate-pulse motion-reduce:animate-none">
+                                <Sparkles className="w-3 h-3 text-amber-300" />
                                 <span>NEW CASE</span>
-                              </span>
-                            )}
-                            <span className="hidden xs:inline-block px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-mono font-bold text-neutral-300 bg-neutral-900 border border-neutral-800">
-                              {caseItem.totalPages} PAGES
-                            </span>
-                            {isLocked ? (
-                              <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-widest text-amber-400 px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-amber-950/80 border border-amber-800/80 flex items-center gap-1">
-                                <Lock className="w-3 h-3 text-amber-400" />
-                                {isCase5 ? 'LOCKED (SOLVE CASE 4)' : isCase4 ? 'LOCKED (SOLVE CASE 3)' : 'LOCKED (SOLVE CASE 2)'}
-                              </span>
-                            ) : progress.status === 'in_progress' ? (
-                              <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-red-600 animate-pulse flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-white" />
-                                <span>IN PROGRESS ({formatTime(progress.elapsedSeconds)})</span>
-                              </span>
-                            ) : progress.status === 'solved' ? (
-                              <span className="text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-emerald-300 px-2 sm:px-3 py-0.5 sm:py-1 rounded bg-emerald-950/90 border border-emerald-500/80 flex items-center gap-1">
-                                <Check className="w-3 h-3 text-emerald-400" />
-                                <span>SOLVED {progress.solveTimeSeconds ? `(${formatTime(progress.solveTimeSeconds)})` : ''}</span>
-                              </span>
-                            ) : (
-                              <span className="text-[10px] sm:text-xs font-mono font-bold uppercase text-neutral-400 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded bg-neutral-900 border border-neutral-800">
-                                NOT STARTED
                               </span>
                             )}
                           </div>
 
                           <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-mono font-bold text-neutral-300">
+                            <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded text-neutral-300 bg-neutral-900 border border-neutral-800">
+                              {caseItem.totalPages} PAGES
+                            </span>
                             <span className="flex items-center gap-1 sm:gap-1.5 bg-neutral-950 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded border border-neutral-800">
                               <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-500" />
                               {caseItem.estimatedTime}
@@ -755,7 +905,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                         <div className="hidden sm:flex items-center gap-1.5 text-[10px] sm:text-xs font-mono uppercase font-bold text-neutral-400">
                           <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 shrink-0" />
                           <span>
-                            {caseItem.suspects.length} {isCase3 ? 'PASSENGERS' : isCase4 ? 'GUILD MEMBERS' : 'GUESTS'} • {caseItem.clues.length} CLUES • {caseItem.totalPages} PAGES
+                            {caseItem.suspects.length} {isCase3 || isCase6 ? 'PASSENGERS' : isCase4 ? 'GUILD MEMBERS' : 'GUESTS'} • {caseItem.clues.length} CLUES • {caseItem.totalPages} PAGES
                           </span>
                         </div>
 
@@ -767,7 +917,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 bg-neutral-900 hover:bg-neutral-800 text-amber-400 font-black px-6 sm:px-8 py-3 rounded-xl text-xs sm:text-sm font-mono uppercase tracking-wider transition-all duration-200 cursor-pointer border border-amber-600/50 hover:border-amber-500 shadow-md touch-manipulation min-h-[44px] active:scale-[0.98] shrink-0"
                           >
                             <Lock className="w-4 h-4 text-amber-400" />
-                            <span>{isCase5 ? 'Locked • Solve Case 4 First' : isCase4 ? 'Locked • Solve Case 3 First' : 'Locked • Solve Case 2 First'}</span>
+                            <span>{isCase6 ? 'Locked • Solve Case 5 First' : isCase5 ? 'Locked • Solve Case 4 First' : isCase4 ? 'Locked • Solve Case 3 First' : 'Locked • Solve Case 2 First'}</span>
                           </button>
                         ) : progress.status === 'in_progress' ? (
                           <button
@@ -775,7 +925,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                             type="button"
                             onClick={() => onSelectCase(caseItem)}
                             className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 sm:gap-3 text-white font-black px-6 sm:px-10 py-3 rounded-xl text-xs sm:text-base font-mono uppercase tracking-wider sm:tracking-widest transition-all duration-200 cursor-pointer shadow-lg hover:scale-[1.02] active:scale-[0.98] touch-manipulation min-h-[44px] shrink-0 ${
-                              isCase5
+                              (isCase5 || isCase6)
                                 ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 border border-yellow-300 shadow-amber-950/60'
                                 : 'bg-red-600 hover:bg-red-500 shadow-red-950/50 border border-red-400'
                             }`}
@@ -839,7 +989,11 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 {lockedModalCase.title} is Locked
               </h3>
               <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
-                {lockedModalCase.id === 'case-5' ? (
+                {lockedModalCase.id === 'case-006' || lockedModalCase.id === 'case-6' ? (
+                  <>
+                    To access the bridge and passenger manifest of the S.S. Halcyon in Case 6, you must first apprehend the culprit in <strong>Case 5: The Stopped Clocks of Ravenmoor</strong>.
+                  </>
+                ) : lockedModalCase.id === 'case-5' ? (
                   <>
                     To access the Ravenmoor Hotel clock room and investigate Lady Imogen’s murder in Case 5, you must first apprehend the culprit in <strong>Case 4: The Pendulum Over Blackwood Spire</strong>.
                   </>
@@ -866,7 +1020,9 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 type="button"
                 onClick={() => {
                   const targetCaseId =
-                    lockedModalCase.id === 'case-5'
+                    lockedModalCase.id === 'case-006' || lockedModalCase.id === 'case-6'
+                      ? 'case-5'
+                      : lockedModalCase.id === 'case-5'
                       ? 'case-4'
                       : lockedModalCase.id === 'case-4'
                       ? 'case-3'
@@ -877,7 +1033,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 }}
                 className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono font-black text-xs uppercase tracking-wider transition-colors shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <span>Play {lockedModalCase.id === 'case-5' ? 'Case 4' : lockedModalCase.id === 'case-4' ? 'Case 3' : 'Case 2'}</span>
+                <span>Play {(lockedModalCase.id === 'case-006' || lockedModalCase.id === 'case-6') ? 'Case 5' : lockedModalCase.id === 'case-5' ? 'Case 4' : lockedModalCase.id === 'case-4' ? 'Case 3' : 'Case 2'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

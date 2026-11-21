@@ -13,7 +13,7 @@ export interface SessionData {
 }
 
 const VALID_VIEWS: ViewMode[] = ['how_to_play', 'case_detail'];
-const VALID_CASE_IDS = ['case-1', 'case-2', 'case-3', 'case-4', 'case-5'];
+const VALID_CASE_IDS = ['case-1', 'case-2', 'case-3', 'case-4', 'case-5', 'case-006', 'case-6'];
 
 export function loadSession(): SessionData | null {
   try {
@@ -401,7 +401,7 @@ export function formatTime(seconds: number | null | undefined): string {
 export function generateSyncCode(progressData: Record<string, CaseProgress>): string {
   try {
     const fullData: Record<string, CaseProgress> = { ...progressData };
-    const defaultCases = ['case-1', 'case-2', 'case-3', 'case-4', 'case-5'];
+    const defaultCases = ['case-1', 'case-2', 'case-3', 'case-4', 'case-5', 'case-006'];
     for (const caseId of defaultCases) {
       if (!fullData[caseId]) {
         fullData[caseId] = getInitialProgress(caseId);
@@ -530,7 +530,7 @@ function sanitizeParsedCases(migrated: Record<string, unknown>): Record<string, 
 
   // If the parsed payload was valid but empty (e.g. freshly initialized sync), provide initial cases
   if (Object.keys(sanitized).length === 0) {
-    for (const caseId of ['case-1', 'case-2', 'case-3', 'case-4', 'case-5']) {
+    for (const caseId of ['case-1', 'case-2', 'case-3', 'case-4', 'case-5', 'case-006']) {
       sanitized[caseId] = getInitialProgress(caseId);
     }
   }

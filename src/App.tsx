@@ -303,6 +303,8 @@ export default function App() {
       setUnlockedCaseBanner('case-4');
     } else if (selectedCase.id === 'case-4') {
       setUnlockedCaseBanner('case-5');
+    } else if (selectedCase.id === 'case-5') {
+      setUnlockedCaseBanner('case-006');
     }
   };
 
@@ -330,7 +332,11 @@ export default function App() {
   const isCase3Locked = !isMaster && selectedCase.id === 'case-3' && allProgress['case-2']?.status !== 'solved';
   const isCase4Locked = !isMaster && selectedCase.id === 'case-4' && allProgress['case-3']?.status !== 'solved';
   const isCase5Locked = !isMaster && selectedCase.id === 'case-5' && allProgress['case-4']?.status !== 'solved';
-  const isCurrentCaseLocked = isCase3Locked || isCase4Locked || isCase5Locked;
+  const isCase6Locked =
+    !isMaster &&
+    (selectedCase.id === 'case-006' || selectedCase.id === 'case-6') &&
+    allProgress['case-5']?.status !== 'solved';
+  const isCurrentCaseLocked = isCase3Locked || isCase4Locked || isCase5Locked || isCase6Locked;
 
   const handleOpenSubscription = () => {
     window.open('https://account.trycorex.store/', '_blank', 'noopener,noreferrer');

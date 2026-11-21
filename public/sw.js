@@ -1,16 +1,20 @@
 // Investignito Service Worker
-const CACHE_NAME = 'investignito-v3';
+const CACHE_NAME = 'investignito-v5';
 
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/favicon.png',
   '/favicon.svg',
+  '/favicon.ico',
   '/icon-32.png',
   '/icon-64.png',
   '/icon-192.png',
   '/icon-512.png',
-  '/apple-touch-icon.png'
+  '/icon-maskable-512.png',
+  '/apple-touch-icon.png',
+  '/apple-touch-icon-precomposed.png'
 ];
 
 self.addEventListener('install', (event) => {

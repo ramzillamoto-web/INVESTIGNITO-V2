@@ -4,8 +4,16 @@ import { CASE_2_DATA } from './case2Data';
 import { CASE_3_DATA } from './case3Data';
 import { CASE_4_DATA } from './case4Data';
 import { CASE_5_DATA } from './case5Data';
+import { CASE_6_DATA } from './case6Data';
 
-export const CASES_DATA: CaseData[] = [CASE_1_DATA, CASE_2_DATA, CASE_3_DATA, CASE_4_DATA, CASE_5_DATA];
+export const CASES_DATA: CaseData[] = [
+  CASE_1_DATA,
+  CASE_2_DATA,
+  CASE_3_DATA,
+  CASE_4_DATA,
+  CASE_5_DATA,
+  CASE_6_DATA,
+];
 
-export { CASE_1_DATA, CASE_2_DATA, CASE_3_DATA, CASE_4_DATA, CASE_5_DATA };
+export { CASE_1_DATA, CASE_2_DATA, CASE_3_DATA, CASE_4_DATA, CASE_5_DATA, CASE_6_DATA };
 

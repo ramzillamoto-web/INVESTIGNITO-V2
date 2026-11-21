@@ -129,8 +129,8 @@ export const CASE_5_CLUES: Clue[] = [
     phase: 'Phase 1: Elimination (Cross)',
     toolType: 'X',
     title: 'Page Letter Partner',
-    clueText: 'ANOTHER NAME ON THE SAME PAGE STARTS WITH THE SAME LETTER (CROSSED NAMES COUNT)',
-    logicRule: 'Eliminate any name that is the unique name on its page starting with that initial',
+    clueText: 'CROSS OUT ANY NAME THAT IS THE ONLY ONE ON ITS PAGE STARTING WITH THAT LETTER (E.G. QUINCY IS THE ONLY “Q” → CROSS · LINDA & LIZ BOTH START WITH “L” → KEEP BOTH · CROSSED NAMES COUNT)',
+    logicRule: 'CROSS OUT ANY NAME THAT IS THE ONLY ONE ON ITS PAGE STARTING WITH THAT LETTER (E.G. QUINCY IS THE ONLY “Q” → CROSS · LINDA & LIZ BOTH START WITH “L” → KEEP BOTH · CROSSED NAMES COUNT)',
     evidenceType: 'timeline'
   },
   {

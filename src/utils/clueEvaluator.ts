@@ -288,6 +288,73 @@ export function evaluateSuspectForClue(
     }
   }
 
+  if (caseId === 'case-006' || caseId === 'case-6') {
+    switch (clueNumber) {
+      case 1:
+        // Clue #1: NAME CONTAINS AT LEAST ONE LETTER FROM THE WORD "SHIP" (S, H, I OR P)
+        return /[ship]/i.test(name) ? 'unaffected' : 'should_cross';
+
+      case 2:
+        // Clue #2: NAME HAS 4 TO 7 LETTERS
+        return name.length >= 4 && name.length <= 7 ? 'unaffected' : 'should_cross';
+
+      case 3:
+        // Clue #3: THE FIRST LETTER OF THE NAME APPEARS NOWHERE ELSE IN THE NAME (E.G. MARK ✓ · ANNA ✗)
+        {
+          const firstChar = name[0]?.toLowerCase();
+          const restOfName = name.slice(1).toLowerCase();
+          return restOfName.includes(firstChar) ? 'should_cross' : 'unaffected';
+        }
+
+      case 4:
+        // Clue #4: NAME CONTAINS AT LEAST TWO DIFFERENT VOWELS (A E I O U) (E.G. MARIE ✓ · ANNA ✗)
+        {
+          const vowels = new Set<string>();
+          for (const ch of name.toLowerCase()) {
+            if ('aeiou'.includes(ch)) vowels.add(ch);
+          }
+          return vowels.size >= 2 ? 'unaffected' : 'should_cross';
+        }
+
+      case 5:
+        // Clue #5: THE NAME DIRECTLY ABOVE CONTAINS AN "A" (ROW 1 = CROSS · CROSSED NAMES COUNT)
+        {
+          if (suspect.row === 1) return 'should_cross';
+          const suspectsList = allSuspects || [];
+          const aboveSuspect = suspectsList.find(
+            (s) => s.pageNumber === suspect.pageNumber && s.col === suspect.col && s.row === suspect.row - 1
+          );
+          if (!aboveSuspect || !/a/i.test(aboveSuspect.name)) {
+            return 'should_cross';
+          }
+          return 'unaffected';
+        }
+
+      case 6:
+        // Clue #6: ANOTHER NAME ON THE SAME PAGE STARTS WITH THE SAME LETTER (CROSSED NAMES COUNT)
+        {
+          const firstChar = name[0]?.toUpperCase();
+          const suspectsList = allSuspects || [];
+          const hasPartner = suspectsList.some(
+            (s) => s.id !== suspect.id && s.pageNumber === suspect.pageNumber && s.name[0]?.toUpperCase() === firstChar
+          );
+          return hasPartner ? 'unaffected' : 'should_cross';
+        }
+
+      case 7:
+        // Clue #7: NAME APPEARS ONLY ONCE IN THE WHOLE LEDGER (ALL 20 PAGES · CROSSED NAMES COUNT)
+        {
+          const nameLower = name.toLowerCase();
+          const suspectsList = allSuspects || [];
+          const occurrences = suspectsList.filter((s) => s.name.toLowerCase() === nameLower).length;
+          return occurrences === 1 ? 'unaffected' : 'should_cross';
+        }
+
+      default:
+        return 'unaffected';
+    }
+  }
+
   return 'unaffected';
 }
 

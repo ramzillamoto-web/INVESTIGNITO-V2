@@ -175,6 +175,36 @@ export const CongratulationsModal: React.FC<CongratulationsModalProps> = ({
           </div>
         )}
 
+        {/* Case 6 Unlock Banner for Case 5 completion */}
+        {isCase5 && (
+          <div className="bg-gradient-to-r from-amber-950/90 via-neutral-950 to-neutral-950 border-2 border-amber-500/80 p-4 rounded-xl mb-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_0_25px_rgba(245,158,11,0.25)]">
+            <div className="flex items-center gap-3 text-left">
+              <div className="w-10 h-10 rounded-lg bg-amber-500/20 border border-amber-500 flex items-center justify-center text-amber-400 shrink-0 shadow-lg">
+                <Unlock className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono font-black uppercase tracking-widest text-amber-400 block">
+                  GRANDMASTER+ CASE UNLOCKED: CASE 6
+                </span>
+                <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-tight">
+                  Case 6: The Last Voyage of the Halcyon
+                </h4>
+              </div>
+            </div>
+            {onGoToNextCase && (
+              <button
+                id="modal-launch-case-6-btn"
+                type="button"
+                onClick={() => onGoToNextCase('case-006')}
+                className="w-full sm:w-auto px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-mono font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <span>Launch Case 6</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Completion Metadata Badge */}
         {progress.solvedDateFormatted && (
           <div className="mb-4 flex items-center justify-center gap-2 text-xs font-mono text-neutral-400 bg-[#0a0a0a] py-1.5 px-3 rounded-lg border border-neutral-800">

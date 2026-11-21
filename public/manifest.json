@@ -1,5 +1,5 @@
 {
-  "name": "INVESTIGNITO - Weekly Case Puzzles",
+  "name": "Investignito",
   "short_name": "Investignito",
   "description": "Step into unsolved master investigations, inspect sequential clues, and isolate the perpetrator.",
   "start_url": "/",
@@ -8,7 +8,7 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "orientation": "any",
-  "background_color": "#060608",
+  "background_color": "#ffffff",
   "theme_color": "#060608",
   "prefer_related_applications": false,
   "categories": ["games", "entertainment", "puzzles"],
