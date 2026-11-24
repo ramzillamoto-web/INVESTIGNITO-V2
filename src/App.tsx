@@ -41,6 +41,7 @@ import { InstalledAppNotice } from './components/InstalledAppNotice';
 import { InstallPromptToast } from './components/InstallPromptToast';
 import {
   getUserSession,
+  setUserSession as saveUserSession,
   UserSession,
 } from './utils/playerAuth';
 import { AuthModal } from './components/AuthModal';
@@ -178,7 +179,7 @@ export default function App() {
   const allProgressRef = useRef(allProgress);
   allProgressRef.current = allProgress;
 
-  // Auto-detect 1-click restore link in URL (?restore=... or ?sync=...)
+  // Auto-detect 1-click restore link in URL (?restore=... or ?sync=...) & Shopify customer credentials
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -188,6 +189,36 @@ export default function App() {
         setIncomingSyncCode(code);
         setSyncModalMode('restore');
         setShowSyncModal(true);
+      }
+
+      // Detect Shopify customer params passed from store page or iframe
+      const paramEmail = (params.get('customer_email') || params.get('email') || '').toLowerCase().trim();
+      const paramUser = (params.get('customer') || params.get('username') || params.get('user') || '').toLowerCase().trim();
+      const isShopifyLoggedIn = params.get('logged_in') === 'true' || params.get('logged_in') === '1' || params.get('shop_login') === '1';
+
+      if (paramEmail || paramUser || isShopifyLoggedIn) {
+        const targetId = paramEmail || paramUser || 'detective';
+        const isMaster =
+          targetId === 'payerbol@gmail.com' ||
+          targetId === 'ramazan@corexbooks.com' ||
+          targetId === 'ramazan@investignito.master' ||
+          targetId === 'ramazan';
+
+        const existingSession = getUserSession();
+        if (!existingSession) {
+          const newSession: UserSession = {
+            username: isMaster ? 'ramazan' : (paramUser || targetId.split('@')[0]),
+            email: paramEmail || (isMaster ? 'payerbol@gmail.com' : ''),
+            password: isMaster ? 'cloudsian123' : '',
+            isMaster,
+            loggedInAt: Date.now(),
+          };
+          saveUserSession(newSession);
+          setUserSession(newSession);
+        }
+      }
+
+      if (code || paramEmail || paramUser || isShopifyLoggedIn) {
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
       }
@@ -348,31 +379,6 @@ export default function App() {
     window.self === window.top &&
     ((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true);
-
-  if (isInstalledStandalone) {
-    return (
-      <div className="min-h-screen bg-[#060608] text-[#f5f5f5]">
-        <InstalledAppNotice
-          onOpenBackup={() => {
-            setSyncModalMode('backup');
-            setShowSyncModal(true);
-          }}
-        />
-        {/* Case Progress Transfer & Backup Modal */}
-        <SyncProgressModal
-          isOpen={showSyncModal}
-          onClose={() => {
-            setShowSyncModal(false);
-            setIncomingSyncCode(null);
-          }}
-          allProgress={allProgress}
-          onRestoreProgress={handleRestoreProgress}
-          initialMode={syncModalMode}
-          incomingCode={incomingSyncCode}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#070709] text-[#f5f5f5] flex flex-col font-sans selection:bg-red-600 selection:text-white relative overflow-x-hidden">
@@ -568,12 +574,10 @@ export default function App() {
         incomingCode={incomingSyncCode}
       />
 
-      {/* Forced In-App Authentication & Detective Account Modal */}
+      {/* In-App Authentication & Detective Account Modal */}
       <AuthModal
-        isOpen={!userSession || showAuthModal}
-        onClose={() => {
-          if (userSession) setShowAuthModal(false);
-        }}
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
         currentSession={userSession}
         onAuthSuccess={handleAuthSuccess}
         onLogout={handleLogout}

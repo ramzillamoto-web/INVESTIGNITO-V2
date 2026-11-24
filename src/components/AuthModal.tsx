@@ -63,9 +63,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  // The modal is strictly non-dismissible when user is NOT logged in
-  const isForced = !currentSession;
-
   const handleSwitchMode = (newMode: AuthMode) => {
     setMode(newMode);
     setErrorMessage(null);
@@ -215,8 +212,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       aria-label="Detective Authentication"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-lg animate-fade-in overflow-y-auto"
       onClick={() => {
-        // Non-dismissible if unauthenticated
-        if (!isForced && onClose) {
+        if (onClose) {
           onClose();
         }
       }}
@@ -229,8 +225,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 35px rgba(220, 38, 38, 0.35)',
         }}
       >
-        {/* Top Close Button (ONLY enabled when user is already authenticated and inspecting their profile) */}
-        {!isForced && onClose && (
+        {/* Top Close Button */}
+        {onClose && (
           <button
             onClick={onClose}
             type="button"
