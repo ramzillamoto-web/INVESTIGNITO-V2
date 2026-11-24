@@ -91,9 +91,11 @@ export const AddToDeviceModal: React.FC<AddToDeviceModalProps> = ({
 
         {/* Header */}
         <div className="flex items-center gap-3.5 mb-5">
-          <div className="w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-700 flex items-center justify-center p-2 shadow-inner shrink-0">
-            <InvestignitoLogo size={32} />
-          </div>
+          <img
+            src="/apple-touch-icon.png"
+            alt="Investignito"
+            className="w-12 h-12 rounded-xl border border-neutral-700 object-cover shadow-inner shrink-0"
+          />
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono font-black uppercase tracking-widest text-red-500">

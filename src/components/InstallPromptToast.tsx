@@ -129,9 +129,11 @@ export const InstallPromptToast: React.FC<InstallPromptToastProps> = ({
           {/* Header */}
           <div className="flex items-start justify-between gap-2.5 mb-2.5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-700 flex items-center justify-center p-1.5 shadow-inner shrink-0">
-                <InvestignitoLogo size={26} />
-              </div>
+              <img
+                src="/apple-touch-icon.png"
+                alt="Investignito"
+                className="w-10 h-10 rounded-xl border border-neutral-700 object-cover shadow-inner shrink-0"
+              />
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[9px] font-mono font-black uppercase tracking-widest text-red-500">

@@ -1,5 +1,5 @@
 // Investignito Service Worker
-const CACHE_NAME = 'investignito-v5';
+const CACHE_NAME = 'investignito-v7';
 
 const PRECACHE_ASSETS = [
   '/',
@@ -11,9 +11,11 @@ const PRECACHE_ASSETS = [
   '/icon-32.png',
   '/icon-64.png',
   '/icon-192.png',
+  '/icon-maskable-192.png',
   '/icon-512.png',
   '/icon-maskable-512.png',
   '/apple-touch-icon.png',
+  '/apple-touch-icon-180x180.png',
   '/apple-touch-icon-precomposed.png'
 ];
 
